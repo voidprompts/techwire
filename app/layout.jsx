@@ -1,10 +1,19 @@
-import './globals.css';
+import fs from 'node:fs';
+import path from 'node:path';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AdsenseScript from '../components/AdsenseScript';
 import AdUnit from '../components/AdUnit';
 import JsonLd from '../components/JsonLd';
 import siteConfig from '../site.config.mjs';
+
+// Pages is a pure static export, so read the canonical stylesheet while Next
+// renders each document. This guarantees the CSS is in the HTML even when a
+// hosting provider invokes `next build` directly and bypasses npm's postbuild
+// lifecycle hook.
+const globalCss = fs
+  .readFileSync(path.join(process.cwd(), 'app', 'globals.css'), 'utf8')
+  .replace(/<\/style/gi, '<\\/style');
 
 export const metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -39,6 +48,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <style data-techwire-global-css dangerouslySetInnerHTML={{ __html: globalCss }} />
         {/* Preconnect to the ad network only when it is actually used. */}
         {siteConfig.adsenseClient && (
           <>
