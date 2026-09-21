@@ -569,11 +569,64 @@ p {
 }
 
 /* Homepage category browser */
+/* Five cards never divide evenly into an auto-fit grid — at four columns the
+   fifth is left stranded alone. Explicit column counts keep every row balanced:
+   1 / 2+2+1(wide) / 3+2 / 5. */
 .silo-grid {
   display: grid;
   gap: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: 1fr;
   margin-bottom: 40px;
+}
+
+@media (min-width: 460px) {
+  .silo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Let the odd card out span the row instead of sitting half-empty. */
+  .silo-grid > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 720px) {
+  .silo-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .silo-grid > :last-child {
+    grid-column: auto;
+  }
+}
+
+@media (min-width: 1120px) {
+  .silo-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  /* At five across each card is only ~217px. Stacking the emoji above the text
+     reclaims the ~36px the inline icon column was taking, so "Artificial
+     Intelligence" fits on one line instead of breaking. */
+  .silo-card {
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+  }
+
+  .silo-card__emoji {
+    font-size: 1.35rem;
+  }
+
+  /* 217px cards cannot hold "Artificial Intelligence" on one line; the short
+     label can. The blurb underneath still carries the full meaning. */
+  .silo-card__name--full {
+    display: none;
+  }
+
+  .silo-card__name--short {
+    display: block;
+  }
 }
 
 .silo-card {
@@ -598,12 +651,19 @@ p {
   flex: none;
 }
 
+.silo-card__name--short {
+  display: none;
+}
+
 .silo-card__name {
   display: block;
   font-weight: 700;
-  font-size: 0.99rem;
-  margin-bottom: 2px;
+  font-size: 0.97rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin-bottom: 3px;
   color: var(--text);
+  text-wrap: balance;
 }
 
 .silo-card:hover .silo-card__name {

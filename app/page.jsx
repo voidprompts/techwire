@@ -34,7 +34,10 @@ export default function HomePage() {
                   {silo.emoji}
                 </span>
                 <span>
-                  <span className="silo-card__name">{silo.name}</span>
+                  <span className="silo-card__name silo-card__name--full">{silo.name}</span>
+                  <span className="silo-card__name silo-card__name--short" aria-hidden="true">
+                    {silo.shortName}
+                  </span>
                   <span className="silo-card__blurb">{silo.blurb}</span>
                   <span className="silo-card__count">
                     {silo.count} {silo.count === 1 ? 'briefing' : 'briefings'}
