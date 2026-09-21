@@ -121,6 +121,7 @@ export function writePost({
   title,
   description,
   keywords,
+  category,
   image,
   imageCreditName,
   imageCreditUrl,
@@ -138,8 +139,12 @@ export function writePost({
     `description: ${yamlString(clampText(description, 155))}`,
     `date: ${yamlString(date || todayIso())}`,
     `keywords: ${yamlList(keywords)}`,
-    `image: ${yamlString(image || '')}`,
   ];
+
+  // Section slug, when the model picked a valid one.
+  if (category) lines.push(`category: ${yamlString(category)}`);
+
+  lines.push(`image: ${yamlString(image || '')}`);
 
   // Image attribution is only emitted when we actually have a credit to give,
   // so hand-written posts and hotlinked fallbacks stay clean.

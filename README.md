@@ -57,6 +57,7 @@ techwire/
 │   ├── not-found.jsx                # 404
 │   ├── posts/[slug]/page.jsx        # Article page (SSG one HTML file per .md)
 │   ├── archive/page.jsx             # Full chronological index
+│   ├── category/[silo]/page.jsx     # ★ The 5 silo hub pages (SSG)
 │   ├── topics/
 │   │   ├── page.jsx                 # Topic cloud
 │   │   └── [topic]/page.jsx         # Per-topic archive (SSG from keywords)
@@ -73,6 +74,7 @@ techwire/
 │   ├── AdsenseScript.jsx            # Loads the AdSense script after hydration
 │   ├── ImageCredit.jsx              # "Photo by X on Unsplash" attribution caption
 │   ├── Header.jsx  Footer.jsx
+│   ├── Nav.jsx                      # Silo navigation (desktop bar + mobile menu)
 │   ├── PostCard.jsx                 # Teaser card w/ next/image
 │   ├── Sidebar.jsx                  # Sticky desktop rail + sidebar ad
 │   ├── Prose.jsx                    # Renders build-time article HTML
@@ -85,6 +87,7 @@ techwire/
 │
 ├── lib/
 │   ├── posts.js                     # fs + path + gray-matter parsing, topics, related, RSS
+│   ├── silos.mjs                    # ★ The 5-category taxonomy + classifier
 │   └── constants.mjs                # Shared Unsplash utm constants
 │
 ├── public/
@@ -133,7 +136,7 @@ Other commands:
 | `npm start` | Serve the built `./out` locally |
 | `npm run scrape` | Run the full pipeline: scrape → AI → write Markdown |
 | `npm run scrape:dry` | Collect and rank candidates only — **no AI calls, no files written** |
-| `node scripts/selftest.mjs` | Offline test suite for the pipeline (32 assertions, no network) |
+| `node scripts/selftest.mjs` | Offline test suite for the pipeline (41 assertions, no network) |
 
 Useful scraper flags:
 
@@ -321,6 +324,35 @@ To activate:
 
 ---
 
+## Content silos
+
+The site is organised into five fixed, high-traffic categories defined in `lib/silos.mjs`:
+
+| | Category | Covers | URL |
+|---|---|---|---|
+| 🤖 | Artificial Intelligence | LLMs, neural networks, automation tools | `/category/artificial-intelligence` |
+| 📱 | Gadgets & Hardware | Smartphones, chips, laptops, wearables | `/category/gadgets-hardware` |
+| 💻 | Software & Dev | Apps, open source, programming updates | `/category/software-dev` |
+| 🔒 | Cybersecurity | Privacy, patches, data security | `/category/cybersecurity` |
+| 🚀 | Startups & Business | Funding, market shifts, mergers | `/category/startups-business` |
+
+Unlike the free-form `keywords` field (which generates long-tail `/topics/*` pages), silos are a **closed set**. That gives the site a stable information architecture, predictable internal linking and clean navigation.
+
+**How a post gets its silo**, in priority order:
+
+1. The `category` field in front-matter, set by the AI pipeline, which picks from the five slugs.
+2. Otherwise, keyword and title pattern-matching in `classifyPost()`. Multi-word matches score higher than single words, keyword matches outrank title matches, and a breadth bonus favours the silo matching the most distinct terms — so a chip story that merely mentions AI stays in Hardware.
+3. If nothing matches, it falls back to the first silo rather than being orphaned from the nav.
+
+To change the taxonomy, edit `SILOS` in `lib/silos.mjs`. Nav, footer, category pages, sitemap, homepage browser and card badges all derive from that one array.
+
+### Navigation behaviour
+
+- **Desktop (≥1000px):** one horizontal row using the short labels (AI, Hardware, Software, Security, Business) so all five fit beside the brand without wrapping.
+- **Mobile (<1000px):** a hamburger disclosure menu showing full category names with their descriptions. Closes on route change, on Escape, and on backdrop click; locks body scroll while open; all rows are 52px touch targets.
+
+---
+
 ## Content format
 
 Every file in `content/posts/` follows this contract:
@@ -331,6 +363,7 @@ title: "SEO Target Title Here"
 description: "150-character meta description here."
 date: "YYYY-MM-DD"
 keywords: ["tech", "ai", "gadgets"]
+category: "artificial-intelligence"
 image: "/images/thumbnails/slug.jpg"
 image_credit_name: "John Doe"
 image_credit_url: "https://unsplash.com/@johndoe?utm_source=techwire&utm_medium=referral"
@@ -344,7 +377,7 @@ author: "TechWire Desk"
 Body markdown. No H1 here — it is rendered from `title`.
 ```
 
-`title`, `description`, `date`, `keywords`, `image` and `source_url` are the required six; `image_credit_name`, `image_credit_url`, `source_name` and `author` are optional. When both `image_credit_*` fields are present the attribution caption renders under the hero image; omit them and it disappears. `keywords` drive the auto-generated topic pages and related-article matching. Hand-written files work exactly the same as generated ones — just drop a `.md` in the folder.
+`title`, `description`, `date`, `keywords`, `image` and `source_url` are the required six; `category`, `image_credit_name`, `image_credit_url`, `source_name` and `author` are optional — omit `category` and the silo is inferred from keywords. When both `image_credit_*` fields are present the attribution caption renders under the hero image; omit them and it disappears. `keywords` drive the auto-generated topic pages and related-article matching. Hand-written files work exactly the same as generated ones — just drop a `.md` in the folder.
 
 ---
 
@@ -354,6 +387,7 @@ Body markdown. No H1 here — it is rendered from `title`.
 |---|---|
 | Site name, tagline, nav, ad slots | `site.config.mjs` |
 | Colours, typography, layout | `app/globals.css` (CSS custom properties at the top) |
+| Categories, emoji, classifier keywords | `lib/silos.mjs` → `SILOS` |
 | Add/remove scrape sources | `scripts/config.mjs` → `SOURCES` |
 | Change the AI editorial voice | `scripts/lib/ai.mjs` → `SYSTEM_PROMPT` |
 | Publishing cadence | `.github/workflows/scrape-and-publish.yml` → `cron` |

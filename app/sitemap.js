@@ -1,4 +1,5 @@
 import { getAllPosts, getAllTopics } from '../lib/posts';
+import { SILOS } from '../lib/silos.mjs';
 import siteConfig from '../site.config.mjs';
 
 /** Static sitemap.xml generated at build time from the markdown corpus. */
@@ -24,6 +25,13 @@ export default function sitemap() {
       lastModified: route.lastModified,
       changeFrequency: route.changeFrequency,
       priority: route.priority,
+    })),
+    // Category hubs are primary landing pages — high priority.
+    ...SILOS.map((silo) => ({
+      url: `${siteConfig.url}/category/${silo.slug}`,
+      lastModified: newest,
+      changeFrequency: 'daily',
+      priority: 0.85,
     })),
     ...posts.map((post) => ({
       url: `${siteConfig.url}/posts/${post.slug}`,

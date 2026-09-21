@@ -28,10 +28,10 @@ export const siteConfig = {
     footer: process.env.NEXT_PUBLIC_ADSLOT_FOOTER || '',
   },
   postsPerPage: 12,
+  // Primary navigation is generated from the silo taxonomy in lib/silos.mjs.
+  // These are the secondary/utility destinations.
   nav: [
-    { href: '/', label: 'Home' },
     { href: '/archive', label: 'Archive' },
-    { href: '/topics', label: 'Topics' },
     { href: '/about', label: 'About' },
   ],
   footerNav: [

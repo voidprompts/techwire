@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Nav from './Nav';
 import siteConfig from '../site.config.mjs';
 
 export default function Header() {
@@ -17,13 +18,7 @@ export default function Header() {
             <small>{siteConfig.tagline}</small>
           </span>
         </Link>
-        <nav className="site-nav" aria-label="Primary">
-          {siteConfig.nav.map((item) => (
-            <Link key={item.href} href={item.href}>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <Nav />
       </div>
     </header>
   );

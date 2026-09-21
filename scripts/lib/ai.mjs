@@ -1,3 +1,4 @@
+import { SILO_SLUGS } from '../../lib/silos.mjs';
 import { PIPELINE } from '../config.mjs';
 import { fetchWithTimeout, log, withRetry } from './utils.mjs';
 
@@ -70,9 +71,12 @@ OUTPUT FORMAT: Return ONLY a single valid JSON object, no markdown fences, no co
   "keywords": ["primary keyword", "secondary", "..."],
   "body_markdown": "string, 800-1200 words of markdown using ## and ### headings",
   "primary_keyword": "string",
+  "category": "one of: artificial-intelligence | gadgets-hardware | software-dev | cybersecurity | startups-business",
   "image_keywords": ["2-3 concrete, visually depictable terms for stock photo search"],
   "confidence": 0.0
 }
+"category" must be the single best-fitting section for this story. Choose the story's PRIMARY subject, not a passing mention: a chip-manufacturing story that mentions AI demand is gadgets-hardware; a funding round for an AI company is startups-business; a vulnerability in an AI tool is cybersecurity.
+
 "image_keywords" must be 2-3 CONCRETE, PHOTOGRAPHABLE terms describing a fitting header image (e.g. "data center", "server rack", "circuit board", "smartphone screen"). They are used to search a stock photo library, so abstract phrases like "market consolidation", "quarterly earnings" or "API deprecation" are useless. Describe a physical scene or object related to the story's subject matter.
 "confidence" is your 0-1 assessment of whether the source text contained enough substance to write a genuinely useful, factually grounded analysis. Use below 0.4 if the source was too thin, paywalled, or not really a technology story.`;
 
@@ -244,6 +248,11 @@ function validateResult(result, input) {
     .filter((k) => k && k.length < 40)
     .slice(0, 3);
 
+  // Section assignment. Invalid or missing values fall through to keyword
+  // inference in lib/silos.mjs rather than failing the article.
+  const rawCategory = String(result.category || '').trim().toLowerCase();
+  const category = SILO_SLUGS.includes(rawCategory) ? rawCategory : '';
+
   const confidence = Number(result.confidence);
 
   return {
@@ -252,6 +261,7 @@ function validateResult(result, input) {
     keywords: keywords.length ? keywords : ['technology'],
     body,
     primaryKeyword: String(result.primary_keyword || keywords[0] || '').trim(),
+    category,
     imageKeywords: imageKeywords.length ? imageKeywords : [String(result.primary_keyword || keywords[0] || 'technology').trim()],
     confidence: Number.isFinite(confidence) ? confidence : 0.5,
     wordCount,

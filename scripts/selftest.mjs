@@ -249,6 +249,49 @@ async function main() {
     assert.equal(missing, null);
   });
 
+  console.log('\ncontent silos');
+  {
+    const { classifyPost, SILOS, getSilo } = await import('../lib/silos.mjs');
+    await test('exposes exactly the five configured silos', () => {
+      assert.equal(SILOS.length, 5);
+      assert.deepEqual(SILOS.map((s2) => s2.slug), [
+        'artificial-intelligence', 'gadgets-hardware', 'software-dev', 'cybersecurity', 'startups-business',
+      ]);
+      SILOS.forEach((s2) => {
+        assert.ok(s2.emoji && s2.name && s2.shortName && s2.blurb && s2.description, `${s2.slug} incomplete`);
+      });
+    });
+    await test('classifies representative stories into the right silo', () => {
+      const cases = [
+        [['llm', 'transformer'], 'A New Transformer Variant Cuts Memory Use', 'artificial-intelligence'],
+        [['smartphone', 'battery'], 'New Flagship Phone Pushes Battery Life', 'gadgets-hardware'],
+        [['kubernetes', 'devops'], 'Kubernetes Ships Major Release', 'software-dev'],
+        [['ransomware', 'breach'], 'Ransomware Group Leaks Data', 'cybersecurity'],
+        [['funding', 'series b'], 'Startup Raises 40M Series B', 'startups-business'],
+      ];
+      for (const [keywords, title, expected] of cases) {
+        assert.equal(classifyPost({ keywords, title }).slug, expected, `${title} -> wrong silo`);
+      }
+    });
+    await test('matches simple plurals', () => {
+      assert.equal(classifyPost({ keywords: ['semiconductors', 'chips'], title: 'Chip Roundup' }).slug, 'gadgets-hardware');
+    });
+    await test('an explicit front-matter category overrides inference', () => {
+      assert.equal(
+        classifyPost({ category: 'cybersecurity', keywords: ['gpu', 'chip'], title: 'Chips' }).slug,
+        'cybersecurity'
+      );
+    });
+    await test('unmatched posts fall back rather than being orphaned', () => {
+      const result = classifyPost({ keywords: [], title: 'Entirely Unrelated Headline' });
+      assert.ok(result && result.slug, 'must always return a silo');
+    });
+    await test('getSilo rejects unknown slugs', () => {
+      assert.equal(getSilo('not-a-silo'), null);
+      assert.ok(getSilo('cybersecurity'));
+    });
+  }
+
   console.log('\nlayout / ad placement');
   {
     const { splitHtmlForMidAd } = await import('../lib/posts.js');

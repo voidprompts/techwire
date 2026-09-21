@@ -246,6 +246,7 @@ async function main() {
           title: generated.title,
           description: clampText(generated.description, 155),
           keywords: generated.keywords,
+          category: generated.category,
           image,
           imageCreditName,
           imageCreditUrl,

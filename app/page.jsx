@@ -2,7 +2,7 @@ import Link from 'next/link';
 import PostCard from '../components/PostCard';
 import Sidebar from '../components/Sidebar';
 import AdUnit from '../components/AdUnit';
-import { getAllPosts, getAllTopics } from '../lib/posts';
+import { getAllPosts, getAllTopics, getSilosWithCounts } from '../lib/posts';
 import siteConfig from '../site.config.mjs';
 
 export const metadata = {
@@ -12,6 +12,7 @@ export const metadata = {
 export default function HomePage() {
   const posts = getAllPosts();
   const topics = getAllTopics().slice(0, 12);
+  const silos = getSilosWithCounts();
   const [lead, ...rest] = posts;
   const feature = rest.slice(0, siteConfig.postsPerPage - 1);
 
@@ -24,6 +25,24 @@ export default function HomePage() {
             <h1>{siteConfig.tagline}</h1>
             <p>{siteConfig.descriptionLong}</p>
           </div>
+
+          {/* Category browser — puts all five silos above the fold */}
+          <nav className="silo-grid" aria-label="Browse by category">
+            {silos.map((silo) => (
+              <Link key={silo.slug} href={`/category/${silo.slug}`} className="silo-card">
+                <span className="silo-card__emoji" aria-hidden="true">
+                  {silo.emoji}
+                </span>
+                <span>
+                  <span className="silo-card__name">{silo.name}</span>
+                  <span className="silo-card__blurb">{silo.blurb}</span>
+                  <span className="silo-card__count">
+                    {silo.count} {silo.count === 1 ? 'briefing' : 'briefings'}
+                  </span>
+                </span>
+              </Link>
+            ))}
+          </nav>
 
           {posts.length === 0 ? (
             <div className="empty-state">

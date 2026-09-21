@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SILOS } from '../lib/silos.mjs';
 import siteConfig from '../site.config.mjs';
 
 export default function Footer() {
@@ -10,7 +11,16 @@ export default function Footer() {
             <p className="site-footer__brand">{siteConfig.name}</p>
             <p className="site-footer__text">{siteConfig.descriptionLong}</p>
           </div>
+          <nav className="site-footer__nav" aria-label="Categories">
+            <p className="site-footer__heading">Categories</p>
+            {SILOS.map((silo) => (
+              <Link key={silo.slug} href={`/category/${silo.slug}`}>
+                <span aria-hidden="true">{silo.emoji}</span> {silo.name}
+              </Link>
+            ))}
+          </nav>
           <nav className="site-footer__nav" aria-label="Footer">
+            <p className="site-footer__heading">Site</p>
             {siteConfig.footerNav.map((item) => (
               <Link key={item.href} href={item.href}>
                 {item.label}

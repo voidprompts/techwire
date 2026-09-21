@@ -29,6 +29,14 @@ export default function PostCard({ post, priority = false, variant = 'default' }
       </Link>
       <div className="card__body">
         <div className="card__meta">
+          {post.silo && (
+            <>
+              <Link href={`/category/${post.silo.slug}`} className="card__silo">
+                <span aria-hidden="true">{post.silo.emoji}</span> {post.silo.shortName}
+              </Link>
+              <span aria-hidden="true">•</span>
+            </>
+          )}
           <time dateTime={post.date}>{formatDate(post.date)}</time>
           <span aria-hidden="true">•</span>
           <span>{post.readingTime} min read</span>
