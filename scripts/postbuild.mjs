@@ -1,0 +1,39 @@
+#!/usr/bin/env node
+/**
+ * Post-build tasks for static hosting.
+ *  - .nojekyll  : stops GitHub Pages from stripping /_next/* directories
+ *  - CNAME      : custom domain, when CUSTOM_DOMAIN is set
+ *  - ads.txt    : required by AdSense when NEXT_PUBLIC_ADSENSE_CLIENT is set
+ *  - 404.html   : ensure a top-level 404 exists for GitHub Pages
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+
+const OUT = path.join(process.cwd(), 'out');
+if (!fs.existsSync(OUT)) {
+  console.error('postbuild: ./out not found — did `next build` run?');
+  process.exit(0);
+}
+
+fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
+console.log('postbuild: wrote .nojekyll');
+
+const domain = process.env.CUSTOM_DOMAIN;
+if (domain) {
+  fs.writeFileSync(path.join(OUT, 'CNAME'), `${domain}\n`);
+  console.log(`postbuild: wrote CNAME (${domain})`);
+}
+
+const adsenseClient = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
+if (adsenseClient) {
+  const publisherId = adsenseClient.replace(/^ca-/, '');
+  fs.writeFileSync(path.join(OUT, 'ads.txt'), `google.com, ${publisherId}, DIRECT, f08c47fec0942fa0\n`);
+  console.log('postbuild: wrote ads.txt');
+}
+
+const nested404 = path.join(OUT, '404', 'index.html');
+const root404 = path.join(OUT, '404.html');
+if (fs.existsSync(nested404) && !fs.existsSync(root404)) {
+  fs.copyFileSync(nested404, root404);
+  console.log('postbuild: wrote 404.html');
+}
