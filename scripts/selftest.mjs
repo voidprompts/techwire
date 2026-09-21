@@ -249,6 +249,30 @@ async function main() {
     assert.equal(missing, null);
   });
 
+  console.log('\nlayout / ad placement');
+  {
+    const { splitHtmlForMidAd } = await import('../lib/posts.js');
+    await test('mid-article ad lands near the true midpoint', () => {
+      const section = (n) => `<h2>S${n}</h2>` + '<p>'.concat('word '.repeat(60), '</p>').repeat(2);
+      const html = [1, 2, 3, 4, 5, 6].map(section).join('');
+      const [a, b] = splitHtmlForMidAd(html);
+      const ratio = a.length / html.length;
+      assert.ok(ratio > 0.35 && ratio < 0.65, `split at ${(ratio * 100).toFixed(0)}% is not mid-article`);
+      assert.equal(a + b, html, 'split must be lossless');
+    });
+    await test('split never severs an element', () => {
+      const html = '<h2>A</h2><p>one</p><h2>B</h2><p>two</p><h2>C</h2><p>three</p><h2>D</h2><p>four</p>';
+      const [a, b] = splitHtmlForMidAd(html);
+      const balanced = (t) => (t.match(/<p>/g) || []).length === (t.match(/<\/p>/g) || []).length;
+      assert.ok(balanced(a) && balanced(b), 'paragraph tags must stay balanced across the split');
+      assert.ok(b.startsWith('<h2'), 'second half should begin at a heading');
+    });
+    await test('very short articles get no mid-ad rather than a bad one', () => {
+      const [, b] = splitHtmlForMidAd('<p>only one para</p>');
+      assert.equal(b, '', 'should return an empty second half so no ad renders');
+    });
+  }
+
   console.log('\nstore (dedupe + write)');
   try {
     const emptyIndex = loadIndex();
