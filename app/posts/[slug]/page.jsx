@@ -101,6 +101,10 @@ export default async function PostPage({ params }) {
                 width={1200}
                 height={675}
                 sizes="(max-width: 1023px) 100vw, 760px"
+                /* The hero is the LCP element, so it loads eagerly with high
+                   fetch priority. Every other image on the page uses standard
+                   lazy loading (see PostCard). Lazy-loading the LCP image is a
+                   well-known PageSpeed regression, so it is deliberate here. */
                 priority
               />
               {/* Photographer attribution, when the image came from Unsplash */}

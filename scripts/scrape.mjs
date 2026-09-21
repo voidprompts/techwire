@@ -25,7 +25,7 @@ import { BLOCKED_DOMAINS, PIPELINE, SOURCES } from './config.mjs';
 import { generateArticle, resolveProvider } from './lib/ai.mjs';
 import { extractArticle } from './lib/extract.mjs';
 import { collectCandidates } from './lib/sources.mjs';
-import { fetchFeatureImage, isEnabled as unsplashEnabled, removeThumbnail } from './lib/unsplash.mjs';
+import { buildQuery, fetchFeatureImage, isEnabled as unsplashEnabled, removeThumbnail } from './lib/unsplash.mjs';
 import {
   findDuplicate,
   isDuplicateOfBatch,
@@ -225,8 +225,11 @@ async function main() {
       let imageCreditName = '';
       let imageCreditUrl = '';
 
+      // 2-3 concrete visual terms chosen by the model, not the SEO keywords.
       const unsplashImage = await fetchFeatureImage({
-        query: generated.primaryKeyword || generated.keywords[0] || 'technology',
+        query: buildQuery(
+          generated.imageKeywords?.length ? generated.imageKeywords : [generated.primaryKeyword, ...generated.keywords]
+        ),
         slug,
       });
       if (unsplashImage) {

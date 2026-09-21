@@ -73,6 +73,26 @@ async function apiGet(url) {
 }
 
 /**
+ * Build an Unsplash search query from 2-3 technical keywords.
+ * Overly long queries return nothing on Unsplash, so this caps the terms,
+ * drops duplicates, and strips punctuation that hurts matching.
+ */
+export function buildQuery(keywords) {
+  const terms = (Array.isArray(keywords) ? keywords : [keywords])
+    .flatMap((k) => String(k || '').split(/[,/]+/))
+    .map((k) => k.replace(/[^a-zA-Z0-9\s-]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase())
+    .filter(Boolean);
+
+  const unique = [];
+  for (const term of terms) {
+    if (unique.some((existing) => existing === term || existing.includes(term) || term.includes(existing))) continue;
+    unique.push(term);
+    if (unique.length === 3) break;
+  }
+  return unique.join(' ');
+}
+
+/**
  * Search for a landscape photo matching the article's subject.
  * Returns the raw API result, or null when nothing suitable is found.
  */
@@ -88,7 +108,9 @@ export async function searchPhoto(query) {
 
   // Prefer a photo that actually carries attribution data we can render.
   return (
-    results.find((photo) => photo?.user?.name && photo?.user?.links?.html && photo?.urls?.raw) || null
+    results.find(
+      (photo) => photo?.user?.name && photo?.user?.links?.html && (photo?.urls?.regular || photo?.urls?.raw)
+    ) || null
   );
 }
 
@@ -106,7 +128,10 @@ export function toAttribution(photo) {
     // Photographer profile URL carrying the required referral parameters.
     creditUrl: withUtm(profile),
     downloadLocation: photo.links?.download_location || '',
-    rawUrl: photo.urls?.raw || photo.urls?.full || photo.urls?.regular || '',
+    // Spec calls for urls.regular (a ready-sized ~1080px JPEG). urls.raw is kept
+    // as a fallback because it accepts explicit sizing parameters.
+    imageUrl: photo.urls?.regular || photo.urls?.raw || photo.urls?.full || '',
+    isRaw: !photo.urls?.regular && Boolean(photo.urls?.raw),
     altDescription: photo.alt_description || photo.description || '',
     id: photo.id || '',
   };
@@ -129,13 +154,17 @@ async function triggerDownload(downloadLocation) {
   }
 }
 
-/** Download the sized JPEG to public/images/thumbnails/<slug>.jpg. */
-async function downloadImage(rawUrl, slug) {
-  // Ask Unsplash for a right-sized, compressed JPEG so the repo stays small.
-  const separator = rawUrl.includes('?') ? '&' : '?';
-  const sized = `${rawUrl}${separator}w=1200&h=675&fit=crop&crop=entropy&q=75&fm=jpg`;
+/** Download the JPEG to public/images/thumbnails/<slug>.jpg. */
+async function downloadImage(imageUrl, slug, { isRaw = false } = {}) {
+  // urls.regular is already a sized, compressed JPEG and is used as-is.
+  // Only the raw fallback needs explicit sizing parameters appended.
+  let target = imageUrl;
+  if (isRaw) {
+    const separator = imageUrl.includes('?') ? '&' : '?';
+    target = `${imageUrl}${separator}w=1200&h=675&fit=crop&crop=entropy&q=75&fm=jpg`;
+  }
 
-  const response = await fetchWithTimeout(sized, {
+  const response = await fetchWithTimeout(target, {
     timeoutMs: 45000,
     headers: { 'user-agent': PIPELINE.userAgent },
   });
@@ -171,7 +200,17 @@ export async function fetchFeatureImage({ query, slug }) {
   if (!query || !slug) return null;
 
   try {
-    const photo = await searchPhoto(query);
+    // Try the full 2-3 keyword query first, then progressively broaden, since
+    // specific technical phrases often have no stock photography match.
+    let photo = null;
+    const attempts = [...new Set([query, query.split(' ').slice(0, 2).join(' '), query.split(' ')[0], 'technology'])].filter(Boolean);
+    for (const attempt of attempts) {
+      photo = await searchPhoto(attempt);
+      if (photo) {
+        if (attempt !== query) log.debug(`  unsplash: broadened query to "${attempt}"`);
+        break;
+      }
+    }
     if (!photo) {
       log.warn(`  unsplash: no results for "${query}"`);
       return null;
@@ -186,7 +225,7 @@ export async function fetchFeatureImage({ query, slug }) {
     // Guideline requirement: register the download before using the image.
     await triggerDownload(attribution.downloadLocation);
 
-    const downloaded = await downloadImage(attribution.rawUrl, slug);
+    const downloaded = await downloadImage(attribution.imageUrl, slug, { isRaw: attribution.isRaw });
     log.info(
       `  unsplash: ${downloaded.publicPath} (${Math.round(downloaded.bytes / 1024)}KB) by ${attribution.creditName}`
     );

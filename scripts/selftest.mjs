@@ -21,7 +21,7 @@ import process from 'node:process';
 import { extractArticle } from './lib/extract.mjs';
 import { collectCandidates } from './lib/sources.mjs';
 import { findDuplicate, loadIndex, uniqueSlug, writePost } from './lib/store.mjs';
-import { toAttribution, withUtm } from './lib/unsplash.mjs';
+import { buildQuery, toAttribution, withUtm } from './lib/unsplash.mjs';
 import { normalizeUrl, similarity, slugify, stripHtml } from './lib/utils.mjs';
 
 const NOW = new Date().toUTCString();
@@ -314,18 +314,33 @@ async function main() {
         'https://unsplash.com/@jane?foo=1&utm_source=techwire&utm_medium=referral'
       );
     });
+    await test('buildQuery caps at 3 concrete terms and dedupes overlaps', () => {
+      assert.equal(buildQuery(['data center', 'server rack', 'cooling', 'extra', 'more']), 'data center server rack cooling');
+      assert.equal(buildQuery(['GPU', 'gpu', 'GPU cluster']), 'gpu');
+      assert.equal(buildQuery(['AI/ML', 'chips!']), 'ai ml chips');
+      assert.equal(buildQuery([]), '');
+    });
     await test('maps an API photo object onto attribution fields', () => {
       const attribution = toAttribution({
         id: 'abc123',
         alt_description: 'a server rack',
-        urls: { raw: 'https://images.unsplash.com/photo-1' },
+        urls: { raw: 'https://images.unsplash.com/photo-raw', regular: 'https://images.unsplash.com/photo-regular' },
         links: { download_location: 'https://api.unsplash.com/photos/abc123/download' },
         user: { name: 'Jane Doe', links: { html: 'https://unsplash.com/@janedoe' } },
       });
       assert.equal(attribution.creditName, 'Jane Doe');
       assert.equal(attribution.creditUrl, 'https://unsplash.com/@janedoe?utm_source=techwire&utm_medium=referral');
       assert.equal(attribution.downloadLocation, 'https://api.unsplash.com/photos/abc123/download');
-      assert.equal(attribution.rawUrl, 'https://images.unsplash.com/photo-1');
+      assert.equal(attribution.imageUrl, 'https://images.unsplash.com/photo-regular', 'must prefer urls.regular');
+      assert.equal(attribution.isRaw, false);
+    });
+    await test('falls back to urls.raw when regular is absent', () => {
+      const attribution = toAttribution({
+        urls: { raw: 'https://images.unsplash.com/photo-raw' },
+        user: { name: 'Jane Doe', links: { html: 'https://unsplash.com/@janedoe' } },
+      });
+      assert.equal(attribution.imageUrl, 'https://images.unsplash.com/photo-raw');
+      assert.equal(attribution.isRaw, true, 'raw fallback must be flagged for sizing');
     });
     await test('returns null when the photo lacks attribution data', () => {
       assert.equal(toAttribution({ user: { name: 'Jane' } }), null, 'missing profile URL');

@@ -44,12 +44,14 @@ NON-NEGOTIABLE PUBLISHING POLICY (Google AdSense / Google Publisher Policies):
 2. NO PLAGIARISM OR COPYRIGHT RISK: Do not reproduce quotes from the source, do not describe copyrighted images, do not invent quotes. Facts are fine; the expression must be yours.
 3. UNIQUE VALUE: The reader must get something the source article did not give them — context on why it matters, the commercial or technical mechanism at work, second-order effects, historical precedent, and what to watch next. Analysis is the product.
 4. NO SENSATIONALISM: No clickbait, no outrage framing, no ALL CAPS, no exclamation marks, no "you won't believe", no fabricated urgency. Measured, professional, expert tone.
+4b. NO SHALLOW SUMMARIES: A recap of what the source said is a policy failure. If you cannot add genuine analytical depth, set confidence below 0.4 instead of padding.
+4c. NO ADULT, VIOLENT OR SHOCKING CONTENT: Strictly avoid adult/sexual topics, graphic violence, gore, hateful content, and illegal goods or services. This is a general-audience, advertiser-safe technology publication.
 5. ACCURACY AND HONESTY: Never invent facts, numbers, dates, product names or company statements that are not supported by the source text. If something is unconfirmed or speculative, explicitly label it as such. Prefer "reportedly" and "according to the original reporting" over false certainty.
 6. NO MEDICAL, LEGAL OR FINANCIAL ADVICE. No investment recommendations.
 
 SEO COPYWRITING REQUIREMENTS:
 - Identify ONE primary keyword (the natural search phrase for this story) plus 4-7 secondary keywords.
-- The H1 title must contain the primary keyword, read naturally, be genuinely click-worthy without being clickbait, and be 50-65 characters.
+- The H1 title must contain the primary keyword, read naturally, and be 50-65 characters. Optimise for high-intent click-through: lead with the concrete subject, signal the specific insight the reader gains, and prefer precise nouns over vague teasers. Click-worthy through substance, never through curiosity gaps or withheld information.
 - The meta description must be 140-155 characters, contain the primary keyword, and summarise the value of the analysis.
 - The body must be 800-1200 words of markdown.
 - Structure with 4-6 "## " H2 subheadings, and use "### " H3 subheadings where a section needs sub-points. Headings must be descriptive and keyword-aware, never generic ("Introduction", "Conclusion" are banned).
@@ -68,8 +70,10 @@ OUTPUT FORMAT: Return ONLY a single valid JSON object, no markdown fences, no co
   "keywords": ["primary keyword", "secondary", "..."],
   "body_markdown": "string, 800-1200 words of markdown using ## and ### headings",
   "primary_keyword": "string",
+  "image_keywords": ["2-3 concrete, visually depictable terms for stock photo search"],
   "confidence": 0.0
 }
+"image_keywords" must be 2-3 CONCRETE, PHOTOGRAPHABLE terms describing a fitting header image (e.g. "data center", "server rack", "circuit board", "smartphone screen"). They are used to search a stock photo library, so abstract phrases like "market consolidation", "quarterly earnings" or "API deprecation" are useless. Describe a physical scene or object related to the story's subject matter.
 "confidence" is your 0-1 assessment of whether the source text contained enough substance to write a genuinely useful, factually grounded analysis. Use below 0.4 if the source was too thin, paywalled, or not really a technology story.`;
 
 function buildUserPrompt({ sourceTitle, sourceName, sourceUrl, publishedAt, text }) {
@@ -233,6 +237,13 @@ function validateResult(result, input) {
     .filter((k) => k && k.length < 40)
     .slice(0, 8);
 
+  // Concrete, photographable terms for the stock image search. Falls back to
+  // the primary keyword when the model omits or empties the field.
+  const imageKeywords = (Array.isArray(result.image_keywords) ? result.image_keywords : [])
+    .map((k) => String(k).toLowerCase().trim())
+    .filter((k) => k && k.length < 40)
+    .slice(0, 3);
+
   const confidence = Number(result.confidence);
 
   return {
@@ -241,6 +252,7 @@ function validateResult(result, input) {
     keywords: keywords.length ? keywords : ['technology'],
     body,
     primaryKeyword: String(result.primary_keyword || keywords[0] || '').trim(),
+    imageKeywords: imageKeywords.length ? imageKeywords : [String(result.primary_keyword || keywords[0] || 'technology').trim()],
     confidence: Number.isFinite(confidence) ? confidence : 0.5,
     wordCount,
     sourceUrl: input.sourceUrl,

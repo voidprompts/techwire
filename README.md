@@ -133,7 +133,7 @@ Other commands:
 | `npm start` | Serve the built `./out` locally |
 | `npm run scrape` | Run the full pipeline: scrape → AI → write Markdown |
 | `npm run scrape:dry` | Collect and rank candidates only — **no AI calls, no files written** |
-| `node scripts/selftest.mjs` | Offline test suite for the pipeline (30 assertions, no network) |
+| `node scripts/selftest.mjs` | Offline test suite for the pipeline (32 assertions, no network) |
 
 Useful scraper flags:
 
@@ -203,13 +203,13 @@ Get a free key at <https://unsplash.com/oauth/applications> → *New Application
 
 ### What the scraper captures
 
-For each article it searches Unsplash using the AI-identified primary keyword, then extracts:
+For each article the AI returns 2-3 **concrete, photographable** terms (`image_keywords` — e.g. "data center", "server rack") separate from the SEO keywords, because abstract phrases like "market consolidation" match no stock photography. The scraper searches `orientation=landscape` with those terms, progressively broadening if there are no results, then extracts:
 
 | Field | Source in the API response |
 |---|---|
 | Photographer name | `user.name` |
 | Photographer profile URL | `user.links.html` + `?utm_source=<app>&utm_medium=referral` |
-| Image file | `urls.raw`, resized to 1200×675 and saved to `public/images/thumbnails/<slug>.jpg` |
+| Image file | `urls.regular`, saved to `public/images/thumbnails/<slug>.jpg` |
 
 It also pings `links.download_location`, which the [Unsplash API guidelines](https://help.unsplash.com/en/articles/2511245) require whenever a photo is used. Results lacking a name or profile URL are skipped rather than published uncredited.
 
