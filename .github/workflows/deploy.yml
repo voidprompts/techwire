@@ -1,0 +1,86 @@
+name: Deploy to GitHub Pages
+
+# Builds the static export and publishes it to GitHub Pages.
+# Triggered by the autopilot's content commits and by ordinary pushes.
+#
+# Using Cloudflare Pages instead? You can disable this workflow entirely —
+# Cloudflare's Git integration builds on push with no workflow required.
+# See README.md for the Cloudflare build settings.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'content/**'
+      - 'app/**'
+      - 'components/**'
+      - 'lib/**'
+      - 'public/**'
+      - 'scripts/postbuild.mjs'
+      - 'site.config.mjs'
+      - 'next.config.mjs'
+      - 'package-lock.json'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; let a newer commit supersede an in-flight build.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build static export
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        env:
+          # For a project site (user.github.io/repo) Pages provides the subpath here.
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          NEXT_PUBLIC_SITE_URL: ${{ steps.pages.outputs.origin }}${{ steps.pages.outputs.base_path }}
+          NEXT_PUBLIC_ADSENSE_CLIENT: ${{ vars.NEXT_PUBLIC_ADSENSE_CLIENT }}
+          NEXT_PUBLIC_ADSLOT_BELOW_TITLE: ${{ vars.NEXT_PUBLIC_ADSLOT_BELOW_TITLE }}
+          NEXT_PUBLIC_ADSLOT_IN_ARTICLE: ${{ vars.NEXT_PUBLIC_ADSLOT_IN_ARTICLE }}
+          NEXT_PUBLIC_ADSLOT_SIDEBAR: ${{ vars.NEXT_PUBLIC_ADSLOT_SIDEBAR }}
+          NEXT_PUBLIC_ADSLOT_FOOTER: ${{ vars.NEXT_PUBLIC_ADSLOT_FOOTER }}
+          CUSTOM_DOMAIN: ${{ vars.CUSTOM_DOMAIN }}
+        run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,118 @@
+name: Scrape and Publish
+
+# Autopilot content pipeline.
+# Runs every 5 hours, scrapes tech sources, rewrites them through the free AI
+# tier, and commits any new markdown back to this branch. The commit then
+# triggers the deploy workflow (or Cloudflare Pages' own Git integration).
+
+on:
+  schedule:
+    # Every 5 hours, offset off the hour to avoid GitHub's peak-minute queueing.
+    - cron: '17 */5 * * *'
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Max articles to publish this run'
+        required: false
+        default: '4'
+      provider:
+        description: 'AI provider (gemini or groq). Leave blank to auto-detect.'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Collect and rank only — no AI calls, no commits'
+        type: boolean
+        required: false
+        default: false
+
+# Never let two scrape runs commit at the same time.
+concurrency:
+  group: scrape-and-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    name: Scrape, generate and commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # 1. Check out the repository (the repo is our database).
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      # 2. Set up the Node.js environment.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Verify pipeline integrity
+        run: node scripts/selftest.mjs
+
+      # 3. Run the scraper, injecting the AI key safely from GitHub Secrets.
+      - name: Run scraper
+        id: scrape
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
+          UNSPLASH_APP_NAME: ${{ vars.UNSPLASH_APP_NAME || 'techwire' }}
+          AI_PROVIDER: ${{ github.event.inputs.provider }}
+          MAX_POSTS_PER_RUN: ${{ github.event.inputs.limit || '4' }}
+          LOG_LEVEL: info
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            node scripts/scrape.mjs --dry-run
+          else
+            node scripts/scrape.mjs
+          fi
+
+      # 4. Check whether the scraper actually produced new content.
+      - name: Detect new content
+        id: changes
+        run: |
+          if [ -n "$(git status --porcelain content/ public/images/thumbnails/)" ]; then
+            NEW_POSTS=$(git status --porcelain content/posts/ | grep -c '^??' || true)
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "new_posts=${NEW_POSTS}" >> "$GITHUB_OUTPUT"
+            echo "Detected ${NEW_POSTS} new article(s)."
+            git status --short content/ public/images/thumbnails/
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No new content this run."
+          fi
+
+      # 5. Commit and push back to the branch. [skip ci] prevents a self-trigger loop.
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true' && github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name  "techwire-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add content/ public/images/thumbnails/
+          git commit -m "chore: automated publish [skip ci]"
+          # Rebase in case a human pushed while we were generating.
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Summary
+        run: |
+          {
+            echo "### TechWire autopilot run"
+            echo ""
+            if [ "${{ steps.changes.outputs.changed }}" = "true" ]; then
+              echo "Published **${{ steps.changes.outputs.new_posts }}** new article(s)."
+            else
+              echo "No new articles — every candidate was a duplicate or failed quality checks."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
