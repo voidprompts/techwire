@@ -271,16 +271,114 @@ node scripts/selftest.mjs       # verify parsers/dedupe/writer against local fix
 
 ### Cloudflare Pages (recommended — unlimited bandwidth)
 
-1. <https://dash.cloudflare.com> → **Workers & Pages** → **Create** → **Pages** → connect your repo
-2. Build settings:
-   - **Framework preset:** Next.js (Static HTML Export)
-   - **Build command:** `npm run build`
-   - **Output directory:** `out`
-   - **Node version:** add env var `NODE_VERSION` = `20`
-3. Add any `NEXT_PUBLIC_*` variables under **Settings → Environment variables**
-4. Leave `NEXT_PUBLIC_BASE_PATH` **empty**
+Cloudflare builds the site itself on every push, so there is nothing to upload
+by hand and no workflow to maintain. Roughly five minutes end to end.
 
-Cloudflare rebuilds automatically on every push, including the bot's content commits. You can then disable `.github/workflows/deploy.yml`.
+#### 1. Push the repo to GitHub
+
+Cloudflare deploys from a branch, so the code has to be on GitHub first.
+
+```bash
+git push origin main
+```
+
+#### 2. Create the Pages project
+
+1. Go to <https://dash.cloudflare.com> and sign in (a free account is enough).
+2. **Workers & Pages** → **Create** → **Pages** → **Connect to Git**.
+3. Authorise Cloudflare for your GitHub account, then pick the `techwire` repo.
+4. Press **Begin setup**.
+
+#### 3. Build settings
+
+Enter exactly these values:
+
+| Field | Value |
+| --- | --- |
+| Production branch | `main` |
+| Framework preset | **Next.js (Static HTML Export)** |
+| Build command | `npm run build` |
+| Build output directory | `out` |
+| Root directory | *(leave empty)* |
+
+#### 4. Environment variables
+
+Still on the setup screen, open **Environment variables (advanced)** and add:
+
+| Variable | Value | Why |
+| --- | --- | --- |
+| `NODE_VERSION` | `20` | Cloudflare still defaults to an older Node; the build needs 20+ |
+| `NEXT_PUBLIC_SITE_URL` | `https://<project>.pages.dev` | Canonical URLs, `sitemap.xml`, `rss.xml` and JSON-LD are absolute |
+
+Leave `NEXT_PUBLIC_BASE_PATH` **empty** — that is only for GitHub Pages project
+sites. Setting it on Cloudflare will break every asset path.
+
+You do **not** need `GEMINI_API_KEY` or `GROQ_API_KEY` here. Cloudflare only
+builds pages from Markdown that already exists; the AI keys live in GitHub
+Secrets, where the scraper actually runs.
+
+#### 5. Deploy
+
+Press **Save and Deploy**. The first build takes 2–3 minutes. When it finishes
+you get a live URL at `https://<project>.pages.dev`.
+
+> If you guessed the URL wrong in step 4, fix `NEXT_PUBLIC_SITE_URL` under
+> **Settings → Environment variables** now that you know the real one, then
+> **Deployments → Retry deployment**. Canonical tags and the sitemap are baked
+> in at build time, so they only pick up the change on a rebuild.
+
+#### 6. Turn off the GitHub Pages workflow
+
+Two hosts publishing the same repo wastes Actions minutes and gets confusing.
+Either delete `.github/workflows/deploy.yml`, or disable it under
+**Actions → Deploy to GitHub Pages → ⋯ → Disable workflow**.
+
+Keep `scrape-and-publish.yml` enabled — that is the autopilot, and it is what
+triggers Cloudflare rebuilds by committing new articles.
+
+#### Custom domain (optional)
+
+1. **Your Pages project → Custom domains → Set up a domain**, enter the domain.
+2. If the domain is already on Cloudflare, the DNS record is created for you.
+   Otherwise add the `CNAME` it shows you at your registrar.
+3. Update `NEXT_PUBLIC_SITE_URL` to the new domain and redeploy so canonical
+   URLs follow. HTTPS is provisioned automatically.
+
+`CUSTOM_DOMAIN` in `.env` is only needed for GitHub Pages (it writes a `CNAME`
+file). Cloudflare ignores it.
+
+#### How updates work from here
+
+```
+scrape-and-publish.yml (every 5h)
+  └─ commits new Markdown to main
+       └─ Cloudflare sees the push
+            └─ runs npm run build
+                 └─ live in ~2 min
+```
+
+Nothing to click. The same happens for any change you push yourself.
+
+#### Caching
+
+`scripts/postbuild.mjs` writes an `out/_headers` file that Cloudflare reads
+automatically:
+
+- `/_next/static/*` — cached one year, immutable (filenames are content-hashed)
+- HTML — `max-age=0, must-revalidate`, so new articles appear immediately
+
+HTML is deliberately never cached at the edge. Pages carry their CSS inline, so
+a stale HTML document is the one thing that can render the site incorrectly.
+
+#### Troubleshooting
+
+| Symptom | Cause and fix |
+| --- | --- |
+| Build fails, `Unsupported engine` / syntax errors | `NODE_VERSION` missing. Add it as `20` and redeploy. |
+| Build succeeds, site 404s | Output directory is not `out`. |
+| Pages load but images and JS 404 | `NEXT_PUBLIC_BASE_PATH` is set. Clear it and redeploy. |
+| Canonical URLs point at `techwire.pages.dev` | `NEXT_PUBLIC_SITE_URL` still holds the default. Update and rebuild. |
+| New articles not appearing | Check the **Actions** tab — the scraper commits, Cloudflare only reacts to the push. |
 
 ### GitHub Pages
 

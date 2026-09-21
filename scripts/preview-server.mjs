@@ -72,6 +72,13 @@ function resolveFile(urlPath) {
 const server = http.createServer((req, res) => {
   const filePath = resolveFile(req.url || '/');
 
+  // Log every request so preview problems can be traced to what the browser
+  // actually asked for, rather than what we assume it asked for.
+  const ua = (req.headers['user-agent'] || '').slice(0, 60);
+  console.log(
+    `${req.method} ${req.url} -> ${filePath ? path.relative(ROOT, filePath) : '404'} | ua="${ua}"`
+  );
+
   if (!filePath) {
     const notFound = path.join(ROOT, '404.html');
     const body = fs.existsSync(notFound) ? fs.readFileSync(notFound) : Buffer.from('404 Not Found');
