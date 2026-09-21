@@ -2,7 +2,8 @@ import Link from 'next/link';
 
 export const metadata = {
   title: 'Page not found',
-  description: 'The page you requested does not exist on TechWire.',
+  description:
+    'That page could not be found on TechWire. Head back to the front page or browse the full archive of original technology analysis and briefings.',
 };
 
 export default function NotFound() {

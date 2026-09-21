@@ -5,7 +5,8 @@ import { getAllPosts, getAllTopics } from '../../lib/posts';
 
 export const metadata = {
   title: 'Archive',
-  description: 'Every technology briefing published on TechWire, newest first.',
+  description:
+    'The complete TechWire archive: every original technology briefing we have published, from AI and hardware to security and the business of tech, newest first.',
   alternates: { canonical: '/archive' },
 };
 

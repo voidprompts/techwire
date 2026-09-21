@@ -1,6 +1,6 @@
 ---
 title: "Custom Silicon Is Quietly Breaking the Data Center Duopoly"
-description: "In-house accelerators from cloud providers are eroding merchant silicon's grip on AI data centers. Analysis of the economics, the trade-offs and what comes next."
+description: "In-house accelerators are eroding merchant silicon's grip on AI data centers. Analysis of the economics, the trade-offs and what comes next."
 date: "2025-09-17"
 keywords: ["custom silicon", "semiconductors", "data centers", "ai infrastructure", "gpu"]
 image: "/images/seed-silicon.jpg"

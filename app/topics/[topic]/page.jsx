@@ -13,7 +13,10 @@ export function generateMetadata({ params }) {
   if (!topic) return { title: 'Topic not found' };
   return {
     title: `${topic.name} news and analysis`,
-    description: `In-depth TechWire briefings covering ${topic.name}. ${topic.count} articles and counting.`,
+    // Aim for 120-160 chars so Google renders it verbatim instead of rewriting.
+    description:
+      `Original analysis of ${topic.name} from the TechWire desk: ${topic.count} in-depth ` +
+      `${topic.count === 1 ? 'briefing' : 'briefings'} on what is changing, why it matters and what to watch next.`,
     alternates: { canonical: `/topics/${topic.slug}` },
   };
 }

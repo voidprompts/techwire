@@ -2,7 +2,8 @@ import siteConfig from '../../site.config.mjs';
 
 export const metadata = {
   title: 'Contact',
-  description: 'Contact the TechWire editorial desk for story tips, corrections, rights requests and advertising enquiries.',
+  description:
+    'Reach the TechWire editorial desk for story tips, factual corrections, rights and takedown requests, or advertising and partnership enquiries.',
   alternates: { canonical: '/contact' },
 };
 

@@ -4,7 +4,8 @@ import { getAllPosts, getAllTopics } from '../../lib/posts';
 
 export const metadata = {
   title: 'Topics',
-  description: 'Browse TechWire analysis by topic: artificial intelligence, hardware, security, policy and more.',
+  description:
+    'Browse every TechWire topic cluster, from artificial intelligence and semiconductors to open source, cybersecurity and the business of technology.',
   alternates: { canonical: '/topics' },
 };
 
