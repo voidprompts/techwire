@@ -367,8 +367,10 @@ automatically:
 - `/_next/static/*` — cached one year, immutable (filenames are content-hashed)
 - HTML — `max-age=0, must-revalidate`, so new articles appear immediately
 
-HTML is deliberately never cached at the edge. Pages carry their CSS inline, so
-a stale HTML document is the one thing that can render the site incorrectly.
+HTML is deliberately never cached at the edge. Global CSS is embedded directly
+by `RootLayout` while Next renders each static document, so an exported page
+cannot depend on a separate stylesheet request. This remains true even if a host
+runs `next build` directly instead of invoking npm lifecycle hooks.
 
 #### Troubleshooting
 
@@ -377,6 +379,7 @@ a stale HTML document is the one thing that can render the site incorrectly.
 | Build fails, `Unsupported engine` / syntax errors | `NODE_VERSION` missing. Add it as `20` and redeploy. |
 | Build succeeds, site 404s | Output directory is not `out`. |
 | Pages load but images and JS 404 | `NEXT_PUBLIC_BASE_PATH` is set. Clear it and redeploy. |
+| Pages appear as unstyled browser-default HTML | Redeploy the current revision. It embeds the global stylesheet in every static HTML document, so no CSS asset request can fail. Keep the build command as `npm run build`. |
 | Canonical URLs point at `techwire.pages.dev` | `NEXT_PUBLIC_SITE_URL` still holds the default. Update and rebuild. |
 | New articles not appearing | Check the **Actions** tab — the scraper commits, Cloudflare only reacts to the push. |
 
