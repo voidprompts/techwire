@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import AdUnit from '../../../components/AdUnit';
 import Sidebar from '../../../components/Sidebar';
 import PostCard from '../../../components/PostCard';
+import ImageCredit from '../../../components/ImageCredit';
 import JsonLd from '../../../components/JsonLd';
 import Prose from '../../../components/Prose';
 import {
@@ -102,6 +103,8 @@ export default async function PostPage({ params }) {
                 sizes="(max-width: 1023px) 100vw, 760px"
                 priority
               />
+              {/* Photographer attribution, when the image came from Unsplash */}
+              <ImageCredit name={post.imageCreditName} url={post.imageCreditUrl} />
             </figure>
           )}
 

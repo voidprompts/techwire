@@ -25,6 +25,7 @@ import { BLOCKED_DOMAINS, PIPELINE, SOURCES } from './config.mjs';
 import { generateArticle, resolveProvider } from './lib/ai.mjs';
 import { extractArticle } from './lib/extract.mjs';
 import { collectCandidates } from './lib/sources.mjs';
+import { fetchFeatureImage, isEnabled as unsplashEnabled, removeThumbnail } from './lib/unsplash.mjs';
 import {
   findDuplicate,
   isDuplicateOfBatch,
@@ -115,6 +116,11 @@ async function main() {
   if (!args.dryRun) {
     provider = args.provider || resolveProvider();
     log.info(`AI provider: ${provider}`);
+    log.info(
+      unsplashEnabled()
+        ? 'Feature images: Unsplash (licensed, attributed)'
+        : 'Feature images: source Open Graph fallback (set UNSPLASH_ACCESS_KEY for licensed images)'
+    );
   }
 
   // ---- 1. Load existing corpus (the Git repo is our database) ----
@@ -210,19 +216,46 @@ async function main() {
         continue;
       }
 
-      // 4d. Persist as markdown
       const slug = uniqueSlug(index, generated.title, candidate.url);
-      const relativePath = writePost({
+
+      // 4d. Feature image.
+      // Prefer a licensed Unsplash photo with full attribution over hotlinking
+      // the publisher's own copyrighted Open Graph image.
+      let image = article.image || candidate.image || '';
+      let imageCreditName = '';
+      let imageCreditUrl = '';
+
+      const unsplashImage = await fetchFeatureImage({
+        query: generated.primaryKeyword || generated.keywords[0] || 'technology',
         slug,
-        title: generated.title,
-        description: clampText(generated.description, 155),
-        keywords: generated.keywords,
-        image: article.image || candidate.image || '',
-        sourceUrl: candidate.url,
-        sourceName: article.siteName || candidate.sourceName,
-        body: generated.body,
-        date: todayIso(),
       });
+      if (unsplashImage) {
+        image = unsplashImage.image;
+        imageCreditName = unsplashImage.imageCreditName;
+        imageCreditUrl = unsplashImage.imageCreditUrl;
+      }
+
+      // 4e. Persist as markdown
+      let relativePath;
+      try {
+        relativePath = writePost({
+          slug,
+          title: generated.title,
+          description: clampText(generated.description, 155),
+          keywords: generated.keywords,
+          image,
+          imageCreditName,
+          imageCreditUrl,
+          sourceUrl: candidate.url,
+          sourceName: article.siteName || candidate.sourceName,
+          body: generated.body,
+          date: todayIso(),
+        });
+      } catch (writeError) {
+        // Do not leave an orphaned thumbnail behind if the markdown write fails.
+        if (unsplashImage) removeThumbnail(slug);
+        throw writeError;
+      }
 
       // Keep the in-memory index current so later iterations dedupe correctly.
       index.slugs.add(slug);

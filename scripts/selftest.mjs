@@ -21,6 +21,7 @@ import process from 'node:process';
 import { extractArticle } from './lib/extract.mjs';
 import { collectCandidates } from './lib/sources.mjs';
 import { findDuplicate, loadIndex, uniqueSlug, writePost } from './lib/store.mjs';
+import { toAttribution, withUtm } from './lib/unsplash.mjs';
 import { normalizeUrl, similarity, slugify, stripHtml } from './lib/utils.mjs';
 
 const NOW = new Date().toUTCString();
@@ -299,6 +300,77 @@ async function main() {
     await test('generates a collision-free slug when titles repeat', () => {
       const second = uniqueSlug(index, 'Quantum Error Correction Hits a Milestone', 'https://other.example.com/x');
       assert.notEqual(second, slug);
+    });
+    console.log('\nunsplash attribution');
+    await test('appends utm params to a bare profile URL', () => {
+      assert.equal(
+        withUtm('https://unsplash.com/@janedoe'),
+        'https://unsplash.com/@janedoe?utm_source=techwire&utm_medium=referral'
+      );
+    });
+    await test('appends utm params to a URL that already has a query', () => {
+      assert.equal(
+        withUtm('https://unsplash.com/@jane?foo=1'),
+        'https://unsplash.com/@jane?foo=1&utm_source=techwire&utm_medium=referral'
+      );
+    });
+    await test('maps an API photo object onto attribution fields', () => {
+      const attribution = toAttribution({
+        id: 'abc123',
+        alt_description: 'a server rack',
+        urls: { raw: 'https://images.unsplash.com/photo-1' },
+        links: { download_location: 'https://api.unsplash.com/photos/abc123/download' },
+        user: { name: 'Jane Doe', links: { html: 'https://unsplash.com/@janedoe' } },
+      });
+      assert.equal(attribution.creditName, 'Jane Doe');
+      assert.equal(attribution.creditUrl, 'https://unsplash.com/@janedoe?utm_source=techwire&utm_medium=referral');
+      assert.equal(attribution.downloadLocation, 'https://api.unsplash.com/photos/abc123/download');
+      assert.equal(attribution.rawUrl, 'https://images.unsplash.com/photo-1');
+    });
+    await test('returns null when the photo lacks attribution data', () => {
+      assert.equal(toAttribution({ user: { name: 'Jane' } }), null, 'missing profile URL');
+      assert.equal(toAttribution({ user: { links: { html: 'https://u.com/x' } } }), null, 'missing name');
+      assert.equal(toAttribution({}), null, 'missing user');
+    });
+
+    await test('writes image_credit_* front-matter when a credit is supplied', async () => {
+      const creditSlug = 'credited-story';
+      const written = writePost({
+        slug: creditSlug,
+        title: 'A Credited Story',
+        description: 'Has an Unsplash image.',
+        keywords: ['tech'],
+        image: '/images/thumbnails/credited-story.jpg',
+        imageCreditName: 'Jane Doe',
+        imageCreditUrl: 'https://unsplash.com/@janedoe?utm_source=techwire&utm_medium=referral',
+        sourceUrl: 'https://example.com/credited',
+        sourceName: 'Example',
+        body: '## Heading\n\nBody.',
+        date: '2025-09-21',
+      });
+      const { default: matter } = await import('gray-matter');
+      const { data } = matter(fs.readFileSync(path.join(tmp, written), 'utf8'));
+      assert.equal(data.image, '/images/thumbnails/credited-story.jpg');
+      assert.equal(data.image_credit_name, 'Jane Doe');
+      assert.ok(data.image_credit_url.includes('utm_source=techwire'));
+      assert.ok(data.image_credit_url.includes('utm_medium=referral'));
+    });
+
+    await test('omits image_credit_* keys entirely when there is no credit', async () => {
+      const written = writePost({
+        slug: 'uncredited-story',
+        title: 'An Uncredited Story',
+        description: 'Uses the source OG image.',
+        keywords: ['tech'],
+        image: 'https://cdn.example.com/og.jpg',
+        sourceUrl: 'https://example.com/uncredited',
+        sourceName: 'Example',
+        body: '## Heading\n\nBody.',
+        date: '2025-09-21',
+      });
+      const raw = fs.readFileSync(path.join(tmp, written), 'utf8');
+      assert.ok(!raw.includes('image_credit_name'), 'should not emit an empty credit key');
+      assert.ok(!raw.includes('image_credit_url'));
     });
   } finally {
     if (previousRoot === undefined) delete process.env.CONTENT_ROOT;

@@ -116,23 +116,47 @@ function yamlList(values) {
  * Write the article as a markdown file with the exact front-matter contract
  * consumed by lib/posts.js at build time.
  */
-export function writePost({ slug, title, description, keywords, image, sourceUrl, sourceName, body, date }) {
+export function writePost({
+  slug,
+  title,
+  description,
+  keywords,
+  image,
+  imageCreditName,
+  imageCreditUrl,
+  sourceUrl,
+  sourceName,
+  body,
+  date,
+}) {
   const dir = postsDir();
   ensureDir(dir);
 
-  const frontMatter = [
+  const lines = [
     '---',
     `title: ${yamlString(title)}`,
     `description: ${yamlString(clampText(description, 155))}`,
     `date: ${yamlString(date || todayIso())}`,
     `keywords: ${yamlList(keywords)}`,
     `image: ${yamlString(image || '')}`,
+  ];
+
+  // Image attribution is only emitted when we actually have a credit to give,
+  // so hand-written posts and hotlinked fallbacks stay clean.
+  if (imageCreditName && imageCreditUrl) {
+    lines.push(`image_credit_name: ${yamlString(imageCreditName)}`);
+    lines.push(`image_credit_url: ${yamlString(imageCreditUrl)}`);
+  }
+
+  lines.push(
     `source_url: ${yamlString(sourceUrl)}`,
     `source_name: ${yamlString(sourceName || '')}`,
     'author: "TechWire Desk"',
     '---',
-    '',
-  ].join('\n');
+    ''
+  );
+
+  const frontMatter = lines.join('\n');
 
   const filePath = path.join(dir, `${slug}.md`);
   fs.writeFileSync(filePath, `${frontMatter}${body.trim()}\n`, 'utf8');

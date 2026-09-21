@@ -411,16 +411,37 @@ p {
 
 .article-hero {
   margin: 26px 0;
-  border-radius: var(--radius);
-  overflow: hidden;
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
 }
 
 .article-hero img {
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  display: block;
+}
+
+/* Photographer attribution caption — minimal, muted, non-distracting,
+   but explicit enough to satisfy Unsplash guidelines and AdSense review. */
+.image-credit {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  font-style: italic;
+  color: var(--text-muted);
+  text-align: left;
+}
+
+.image-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.image-credit a:hover {
+  color: var(--accent);
 }
 
 .prose {

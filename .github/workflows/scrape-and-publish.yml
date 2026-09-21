@@ -66,6 +66,8 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
+          UNSPLASH_APP_NAME: ${{ vars.UNSPLASH_APP_NAME || 'techwire' }}
           AI_PROVIDER: ${{ github.event.inputs.provider }}
           MAX_POSTS_PER_RUN: ${{ github.event.inputs.limit || '4' }}
           LOG_LEVEL: info
@@ -80,12 +82,12 @@ jobs:
       - name: Detect new content
         id: changes
         run: |
-          if [ -n "$(git status --porcelain content/)" ]; then
+          if [ -n "$(git status --porcelain content/ public/images/thumbnails/)" ]; then
             NEW_POSTS=$(git status --porcelain content/posts/ | grep -c '^??' || true)
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "new_posts=${NEW_POSTS}" >> "$GITHUB_OUTPUT"
             echo "Detected ${NEW_POSTS} new article(s)."
-            git status --short content/
+            git status --short content/ public/images/thumbnails/
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No new content this run."
@@ -97,7 +99,7 @@ jobs:
         run: |
           git config user.name  "techwire-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add content/
+          git add content/ public/images/thumbnails/
           git commit -m "chore: automated publish [skip ci]"
           # Rebase in case a human pushed while we were generating.
           git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
