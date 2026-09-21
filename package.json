@@ -3,15 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "TechWire — an automated, zero-cost technology news curation index built on Next.js static export + Git-as-a-database.",
+  "description": "TechWire \u2014 an automated, zero-cost technology news curation index built on Next.js static export + Git-as-a-database.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "npx serve@latest out",
+    "start": "node scripts/preview-server.mjs --port 3000 --dir out",
     "lint": "next lint",
     "scrape": "node scripts/scrape.mjs",
     "scrape:dry": "node scripts/scrape.mjs --dry-run",
-    "postbuild": "node scripts/postbuild.mjs"
+    "postbuild": "node scripts/postbuild.mjs",
+    "preview": "npm run build && node scripts/preview-server.mjs --port 3000 --dir out"
   },
   "dependencies": {
     "gray-matter": "^4.0.3",

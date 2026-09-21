@@ -133,7 +133,7 @@ Other commands:
 |---|---|
 | `npm run dev` | Local dev server with hot reload |
 | `npm run build` | Static export into `./out` (+ postbuild extras) |
-| `npm start` | Serve the built `./out` locally |
+|  Serve the built `./out` locally | Serve the built `./out` locally |
 | `npm run scrape` | Run the full pipeline: scrape → AI → write Markdown |
 | `npm run scrape:dry` | Collect and rank candidates only — **no AI calls, no files written** |
 | `node scripts/selftest.mjs` | Offline test suite for the pipeline (41 assertions, no network) |
