@@ -5,7 +5,7 @@ export const metadata = {
   title: 'Terms of Service',
   description:
     'The terms governing use of TechWire, including intellectual property, acceptable use, disclaimers and limitation of liability.',
-  alternates: { canonical: '/terms-of-service' },
+  alternates: { canonical: '/terms-of-service/' },
 };
 
 const EFFECTIVE_DATE = 'January 1, 2025';

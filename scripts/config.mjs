@@ -2,6 +2,7 @@
  * Scraper configuration.
  * Everything here is tunable without touching pipeline code.
  */
+import siteConfig from '../site.config.mjs';
 
 export const SOURCES = [
   {
@@ -73,8 +74,10 @@ export const PIPELINE = {
   requestTimeoutMs: 20000,
   /** Retry attempts for transient network/API failures. */
   maxRetries: 3,
-  userAgent:
-    'TechWireBot/1.0 (+https://techwire.pages.dev; static news curation index; contact editorial@techwire.example)',
+  // Derived from site.config.mjs so the contact address a publisher sees in
+  // their logs can never drift from the one published on the site. Sites that
+  // rate-limit or block bots often check this before reaching for a ban.
+  userAgent: `TechWireBot/1.0 (+${siteConfig.url}; static news curation index; contact ${siteConfig.email})`,
   targetWordsMin: 800,
   targetWordsMax: 1200,
 };

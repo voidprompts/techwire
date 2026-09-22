@@ -5,7 +5,7 @@ export const metadata = {
   title: 'Privacy Policy',
   description:
     'How TechWire handles data: what we collect, the cookies used by advertising partners, and your rights under GDPR and CCPA.',
-  alternates: { canonical: '/privacy-policy' },
+  alternates: { canonical: '/privacy-policy/' },
   robots: { index: true, follow: true },
 };
 
