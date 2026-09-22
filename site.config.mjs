@@ -17,7 +17,7 @@ export const siteConfig = {
   url: (process.env.NEXT_PUBLIC_SITE_URL || 'https://techwire.pages.dev').replace(/\/$/, ''),
   basePath,
   locale: 'en_US',
-  email: 'editorial@techwire.example',
+  email: 'editorial.techwire@gmail.com',
   // Google AdSense publisher id, e.g. "ca-pub-1234567890123456".
   // Leave empty until AdSense approves the site — the placeholders stay inert but present.
   adsenseClient: process.env.NEXT_PUBLIC_ADSENSE_CLIENT || '',
