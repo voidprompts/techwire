@@ -167,7 +167,12 @@ async function main() {
 
   // ---- 4. Process the queue until we hit the publish limit ----
   const published = [];
-  const processedUrls = [];
+  // Only URLs we deliberately rejected on editorial grounds are remembered.
+  // Infrastructure failures (network, provider outage, retired model) must NOT
+  // land here: burning them would permanently blacklist perfectly good stories
+  // that were never actually assessed.
+  const rejectedUrls = [];
+  const failures = [];
   let attempts = 0;
   const maxAttempts = Math.min(queue.length, args.limit * 5);
 
@@ -184,9 +189,16 @@ async function main() {
 
       // 4a. Extract readable source text
       const article = await extractArticle(candidate.url);
-      if (!article || article.charCount < PIPELINE.minSourceChars) {
-        log.warn(`  skipped — only ${article?.charCount ?? 0} usable chars extracted`);
-        processedUrls.push(candidate.url);
+      // A null result means the page could not be fetched at all — transient,
+      // so leave the URL eligible for a later run instead of blacklisting it.
+      if (!article) {
+        log.warn('  retrying next run — source page could not be fetched');
+        failures.push({ url: candidate.url, reason: 'fetch failed' });
+        continue;
+      }
+      if (article.charCount < PIPELINE.minSourceChars) {
+        log.warn(`  skipped — only ${article.charCount} usable chars extracted`);
+        rejectedUrls.push(candidate.url);
         continue;
       }
       log.info(`  extracted ${article.charCount} chars`);
@@ -205,14 +217,14 @@ async function main() {
 
       if (generated.confidence < 0.4) {
         log.warn(`  skipped — model confidence ${generated.confidence} below threshold`);
-        processedUrls.push(candidate.url);
+        rejectedUrls.push(candidate.url);
         continue;
       }
 
       // 4c. Final duplicate guard against titles generated earlier in this run
       if (isDuplicateOfBatch(published, generated.title)) {
         log.warn('  skipped — near-duplicate of a story already queued this run');
-        processedUrls.push(candidate.url);
+        rejectedUrls.push(candidate.url);
         continue;
       }
 
@@ -267,12 +279,14 @@ async function main() {
       index.posts.push({ slug, title: generated.title, sourceUrl: candidate.url, date: todayIso() });
 
       published.push({ slug, title: generated.title, path: relativePath, words: generated.wordCount });
-      processedUrls.push(candidate.url);
+      rejectedUrls.push(candidate.url);
       log.success(`  published ${relativePath} (${generated.wordCount} words)`);
     } catch (error) {
       log.error(`  failed: ${error.message}`);
-      processedUrls.push(candidate.url);
-      // A fatal provider error (bad key, quota, safety block config) ends the run.
+      // An exception is an infrastructure fault, not an editorial verdict.
+      // Keep the URL eligible so the story is retried once the fault is fixed.
+      failures.push({ url: candidate.url, reason: error.message });
+      // A fatal provider error (bad key, quota, retired model) ends the run.
       if (error.fatal) {
         log.error('Fatal provider error — stopping the run early.');
         break;
@@ -280,16 +294,34 @@ async function main() {
     }
   }
 
-  saveState(index, processedUrls);
+  saveState(index, rejectedUrls);
 
   const seconds = ((Date.now() - startedAt) / 1000).toFixed(1);
   log.step(`Run complete in ${seconds}s — ${published.length} article(s) published`);
   published.forEach((item) => log.info(`  • ${item.title} → ${item.path}`));
 
-  // Surface the count to the GitHub Actions workflow.
+  if (failures.length) {
+    log.warn(`${failures.length} candidate(s) failed and will be retried next run:`);
+    failures.forEach((item) => log.warn(`  • ${item.url} — ${item.reason}`));
+  }
+
+  // Surface the outcome to the GitHub Actions workflow.
   if (process.env.GITHUB_OUTPUT) {
     const { appendFileSync } = await import('node:fs');
-    appendFileSync(process.env.GITHUB_OUTPUT, `published_count=${published.length}\n`);
+    appendFileSync(
+      process.env.GITHUB_OUTPUT,
+      `published_count=${published.length}\nfailure_count=${failures.length}\nattempted_count=${attempts}\n`
+    );
+  }
+
+  // A run that attempted work and published nothing is a failure, not a success.
+  // Exiting non-zero stops the workflow from reporting a green "success" tick
+  // over an empty publish, which is exactly how this went unnoticed before.
+  if (attempts > 0 && published.length === 0) {
+    log.error(
+      `Attempted ${attempts} candidate(s) and published nothing (${failures.length} hard failure(s)). Failing the run.`
+    );
+    process.exitCode = 1;
   }
 }
 

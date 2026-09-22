@@ -382,6 +382,9 @@ runs `next build` directly instead of invoking npm lifecycle hooks.
 | Pages appear as unstyled browser-default HTML | Redeploy the current revision. It embeds the global stylesheet in every static HTML document, so no CSS asset request can fail. Keep the build command as `npm run build`. |
 | Canonical URLs point at `techwire.pages.dev` | `NEXT_PUBLIC_SITE_URL` still holds the default. Update and rebuild. |
 | New articles not appearing | Check the **Actions** tab — the scraper commits, Cloudflare only reacts to the push. |
+| Scrape run is green but no article was published | Open the run summary: it now prints candidates attempted / published / failed. A run that attempts candidates and publishes none exits non-zero, so a green tick with zero posts should no longer be possible. |
+| Scraper log shows `Gemini HTTP 404 … model is not served` | The configured model id no longer exists. Google retired the Gemini 1.5 family in late 2025. Set the `GEMINI_MODEL` variable to a current model, e.g. `gemini-2.5-flash`. |
+| A commit lands but no deployment starts | The commit message must not contain `[skip ci]` / `[CI Skip]` — both `deploy.yml` and Cloudflare Pages honour that marker and will skip the build. |
 
 ### GitHub Pages
 

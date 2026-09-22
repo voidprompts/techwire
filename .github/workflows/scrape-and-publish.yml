@@ -78,41 +78,62 @@ jobs:
             node scripts/scrape.mjs
           fi
 
-      # 4. Check whether the scraper actually produced new content.
+      # 4. Check whether the scraper actually produced new ARTICLES.
+      #    The bookkeeping file (content/.scraper-state.json) changes on every
+      #    run even when nothing is published, so it must never by itself count
+      #    as "new content" — otherwise the job commits an empty publish and
+      #    reports success.
       - name: Detect new content
         id: changes
         run: |
-          if [ -n "$(git status --porcelain content/ public/images/thumbnails/)" ]; then
-            NEW_POSTS=$(git status --porcelain content/posts/ | grep -c '^??' || true)
+          NEW_POSTS=$(git status --porcelain content/posts/ | grep -c '^??' || true)
+          echo "new_posts=${NEW_POSTS}" >> "$GITHUB_OUTPUT"
+          git status --short content/ public/images/thumbnails/ || true
+
+          if [ "${NEW_POSTS}" -gt 0 ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "new_posts=${NEW_POSTS}" >> "$GITHUB_OUTPUT"
             echo "Detected ${NEW_POSTS} new article(s)."
-            git status --short content/ public/images/thumbnails/
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No new content this run."
+            echo "No new articles this run — state-only changes are not committed."
           fi
 
-      # 5. Commit and push back to the branch. [skip ci] prevents a self-trigger loop.
+      # 5. Commit and push back to the branch.
+      #    NOTE: do NOT put "[skip ci]" in this message. This workflow has no
+      #    `push` trigger, so there is no self-trigger loop to prevent — but the
+      #    marker DOES stop deploy.yml from running and is also honoured by
+      #    Cloudflare Pages' Git integration, so it silently prevented every
+      #    published article from ever reaching the live site.
       - name: Commit and push
         if: steps.changes.outputs.changed == 'true' && github.event.inputs.dry_run != 'true'
         run: |
           git config user.name  "techwire-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add content/ public/images/thumbnails/
-          git commit -m "chore: automated publish [skip ci]"
+          git commit -m "chore: publish ${{ steps.changes.outputs.new_posts }} new article(s)"
           # Rebase in case a human pushed while we were generating.
           git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Summary
+        if: always()
         run: |
           {
             echo "### TechWire autopilot run"
             echo ""
             if [ "${{ steps.changes.outputs.changed }}" = "true" ]; then
               echo "Published **${{ steps.changes.outputs.new_posts }}** new article(s)."
+            elif [ "${{ steps.scrape.outcome }}" != "success" ]; then
+              echo "⚠️ **The scraper failed — no articles were published.**"
+              echo ""
+              echo "Open the *Run scraper* step log for the provider error."
             else
               echo "No new articles — every candidate was a duplicate or failed quality checks."
             fi
+            echo ""
+            echo "| Metric | Value |"
+            echo "| --- | --- |"
+            echo "| Candidates attempted | ${{ steps.scrape.outputs.attempted_count || '0' }} |"
+            echo "| Articles published | ${{ steps.scrape.outputs.published_count || '0' }} |"
+            echo "| Hard failures | ${{ steps.scrape.outputs.failure_count || '0' }} |"
           } >> "$GITHUB_STEP_SUMMARY"
