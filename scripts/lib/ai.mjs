@@ -13,11 +13,20 @@ import { fetchWithTimeout, log, withRetry } from './utils.mjs';
  * Both providers are asked for strict JSON so the output maps 1:1 onto front-matter.
  */
 
-// Google retired the Gemini 1.5 family (including `gemini-1.5-flash-latest`)
-// in late 2025 — those model ids now return HTTP 404 on every call. Keep this
-// pointed at a currently-served free-tier model and override with GEMINI_MODEL.
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+// Google retires Gemini model families on a cadence: 1.5 died in late 2025,
+// and 2.5-flash was closed to new users in 2026 — retired ids return HTTP 404
+// on every call. Keep this pointed at a currently-served free-tier model and
+// override with GEMINI_MODEL. When a retirement 404 does land, callGemini
+// self-heals by switching to the replacement model named in the API's own
+// error message, so a retirement can no longer stall the autopilot.
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+
+// Mutable so a retirement 404 can hot-swap to the replacement model mid-run.
+let activeGeminiModel = GEMINI_MODEL;
+// Only one hot-swap per process — if the replacement is also dead, that is a
+// real fatal, not something to ping-pong on.
+let geminiModelSwapped = false;
 
 export function resolveProvider() {
   const explicit = (process.env.AI_PROVIDER || '').toLowerCase();
@@ -121,9 +130,20 @@ function parseJsonResponse(raw) {
   }
 }
 
+/**
+ * When Google retires a model, the 404 body names its replacement, e.g.
+ * "This model models/gemini-2.5-flash is no longer available … update your
+ * code to use models/gemini-3.6-flash". The body mentions BOTH the dead model
+ * and its successor, so return the first id that is not the one we just used.
+ */
+function suggestedGeminiModel(detail, currentModel) {
+  const ids = [...String(detail || '').matchAll(/models\/(gemini-[a-z0-9.-]+)/gi)].map((m) => m[1]);
+  return ids.find((id) => id !== currentModel) || null;
+}
+
 async function callGemini(userPrompt) {
   const key = process.env.GEMINI_API_KEY;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeGeminiModel}:generateContent?key=${key}`;
 
   const response = await fetchWithTimeout(url, {
     method: 'POST',
@@ -149,12 +169,27 @@ async function callGemini(userPrompt) {
 
   if (!response.ok) {
     const detail = await response.text().catch(() => '');
-    // A 404 means the model id does not exist (or was retired) — retrying it
-    // three times per article just burns the run silently, so treat it as fatal
-    // and say exactly which model failed.
+
+    // A 404 means the model id does not exist (or was retired). Google's own
+    // error body names the replacement model — switch to it and retry once
+    // instead of stalling the whole autopilot until a human edits config.
+    if (response.status === 404 && !geminiModelSwapped) {
+      const replacement = suggestedGeminiModel(detail, activeGeminiModel);
+      if (replacement && replacement !== activeGeminiModel) {
+        geminiModelSwapped = true;
+        log.warn(
+          `Gemini model "${activeGeminiModel}" is retired — switching to "${replacement}" as directed by the API.`
+        );
+        activeGeminiModel = replacement;
+        return callGemini(userPrompt);
+      }
+    }
+
+    // Retrying a dead model id three times per article just burns the run
+    // silently, so treat it as fatal and say exactly which model failed.
     const hint =
       response.status === 404
-        ? ` — model "${GEMINI_MODEL}" is not served by the Gemini API. Set GEMINI_MODEL to a current model (see https://ai.google.dev/gemini-api/docs/models).`
+        ? ` — model "${activeGeminiModel}" is not served by the Gemini API. Set GEMINI_MODEL to a current model (see https://ai.google.dev/gemini-api/docs/models).`
         : '';
     const error = new Error(`Gemini HTTP ${response.status}: ${detail.slice(0, 300)}${hint}`);
     if ([400, 401, 403, 404].includes(response.status)) error.fatal = true;
@@ -218,13 +253,36 @@ export async function generateArticle(input, provider = resolveProvider()) {
   if (!call) throw new Error(`Unsupported AI provider "${provider}"`);
 
   const userPrompt = buildUserPrompt(input);
-  const result = await withRetry(() => call(userPrompt), {
-    retries: PIPELINE.maxRetries,
-    baseDelay: 2500,
-    label: `${provider} generation`,
-  });
+  try {
+    const result = await withRetry(() => call(userPrompt), {
+      retries: PIPELINE.maxRetries,
+      baseDelay: 2500,
+      label: `${provider} generation`,
+    });
+    return validateResult(result, input);
+  } catch (error) {
+    // A fatal provider error (bad key, quota, retired model) would end the
+    // whole run — but if the OTHER provider's key is configured, fail over to
+    // it instead. Only when the fallback also dies do we surface the fatal.
+    const fallback = fallbackProvider(provider);
+    if (error?.fatal && fallback) {
+      log.warn(`${provider} failed fatally (${error.message.slice(0, 160)}) — failing over to ${fallback}.`);
+      const result = await withRetry(() => PROVIDERS[fallback](userPrompt), {
+        retries: PIPELINE.maxRetries,
+        baseDelay: 2500,
+        label: `${fallback} generation (failover)`,
+      });
+      return validateResult(result, input);
+    }
+    throw error;
+  }
+}
 
-  return validateResult(result, input);
+/** The other provider, if its key is configured; otherwise null. */
+function fallbackProvider(provider) {
+  if (provider === 'gemini' && process.env.GROQ_API_KEY) return 'groq';
+  if (provider === 'groq' && process.env.GEMINI_API_KEY) return 'gemini';
+  return null;
 }
 
 /** Normalize and sanity-check the model output before it ever reaches disk. */
