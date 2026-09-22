@@ -1,26 +1,18 @@
 name: Deploy to GitHub Pages
 
-# Builds the static export and publishes it to GitHub Pages.
-# Triggered by the autopilot's content commits and by ordinary pushes.
+# This project deploys via Cloudflare Pages, whose Git integration builds
+# directly on push — no workflow required. This GitHub Pages workflow is kept
+# only as an escape hatch and is therefore MANUAL-ONLY.
 #
-# Using Cloudflare Pages instead? You can disable this workflow entirely —
-# Cloudflare's Git integration builds on push with no workflow required.
-# See README.md for the Cloudflare build settings.
+# It used to run on every push to main. GitHub Pages is not enabled on this
+# repository, so it failed at "Configure GitHub Pages" every single time and
+# put a red X on each commit — noise that made a broken content pipeline much
+# harder to spot.
+#
+# To switch back to GitHub Pages: enable Settings -> Pages -> Source:
+# "GitHub Actions", then restore the `push:` trigger below.
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'content/**'
-      - 'app/**'
-      - 'components/**'
-      - 'lib/**'
-      - 'public/**'
-      - 'scripts/postbuild.mjs'
-      - 'site.config.mjs'
-      - 'next.config.mjs'
-      - 'package-lock.json'
-      - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
 permissions:

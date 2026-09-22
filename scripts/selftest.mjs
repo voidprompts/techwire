@@ -17,6 +17,12 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+// Resolved from this file, not cwd — the store tests repoint CONTENT_ROOT at a
+// temp dir, but the source-level regression guards must read the real repo.
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 import { extractArticle } from './lib/extract.mjs';
 import { collectCandidates } from './lib/sources.mjs';
@@ -453,6 +459,127 @@ async function main() {
       const raw = fs.readFileSync(path.join(tmp, written), 'utf8');
       assert.ok(!raw.includes('image_credit_name'), 'should not emit an empty credit key');
       assert.ok(!raw.includes('image_credit_url'));
+    });
+
+    // Regression guards for the "successful run, zero posts" incident.
+    console.log('\npublish-path regressions');
+
+    await test('the autopilot commit message never carries a CI-skip marker', () => {
+      const workflow = fs.readFileSync(
+        path.join(repoRoot, '.github/workflows/scrape-and-publish.yml'),
+        'utf8'
+      );
+      const commitLine = workflow
+        .split('\n')
+        .find((line) => line.includes('git commit -m'));
+      assert.ok(commitLine, 'expected a git commit line in the workflow');
+      // Cloudflare Pages and deploy.yml both honour these markers, so an
+      // article committed with one would never reach the live site.
+      assert.ok(
+        !/\[\s*(skip[ -]ci|ci[ -]skip|cf-pages-skip)\s*\]/i.test(commitLine),
+        'commit message must not contain a CI-skip marker — it blocks deployment'
+      );
+    });
+
+    await test('new content is detected from posts, not the state file', () => {
+      const workflow = fs.readFileSync(
+        path.join(repoRoot, '.github/workflows/scrape-and-publish.yml'),
+        'utf8'
+      );
+      const detect = workflow.slice(
+        workflow.indexOf('id: changes'),
+        workflow.indexOf('- name: Commit and push')
+      );
+      assert.ok(
+        detect.includes("git status --porcelain content/posts/"),
+        'the changed flag must be driven by content/posts/'
+      );
+      assert.ok(
+        !/if \[ -n "\$\(git status --porcelain content\/ /.test(detect),
+        'the bookkeeping state file must not, by itself, mark the run as changed'
+      );
+    });
+
+    await test('no retired Gemini 1.5 model id is configured anywhere', () => {
+      for (const file of ['scripts/lib/ai.mjs', '.env.example']) {
+        const contents = fs.readFileSync(path.join(repoRoot, file), 'utf8');
+        const active = contents
+          .split('\n')
+          // Comments may legitimately mention the retired ids to explain them.
+          .filter((line) => !/^\s*(#|\/\/|\*)/.test(line))
+          .join('\n');
+        assert.ok(
+          !/gemini-1\.5-[a-z0-9.-]*/i.test(active),
+          `${file} still references a retired Gemini 1.5 model id`
+        );
+      }
+    });
+
+    await test('a 404 from the model endpoint is fatal, not retried', () => {
+      const ai = fs.readFileSync(path.join(repoRoot, 'scripts/lib/ai.mjs'), 'utf8');
+      const geminiBlock = ai.slice(ai.indexOf('async function callGemini'), ai.indexOf('async function callGroq'));
+      const guard = geminiBlock.match(/if \(\[([^\]]*)\]\.includes\(response\.status\)\) error\.fatal = true/);
+      assert.ok(guard, 'expected a fatal-status guard in callGemini');
+      assert.ok(guard[1].includes('404'), '404 must be fatal so a dead model id cannot silently burn a run');
+    });
+
+    await test('infrastructure failures do not blacklist the source URL', () => {
+      const scrape = fs.readFileSync(path.join(repoRoot, 'scripts/scrape.mjs'), 'utf8');
+      const catchBlock = scrape.slice(scrape.indexOf('} catch (error) {'), scrape.indexOf('saveState('));
+      assert.ok(
+        !/rejectedUrls\.push/.test(catchBlock),
+        'a thrown error must not add the URL to the permanent rejected list'
+      );
+      assert.ok(/failures\.push/.test(catchBlock), 'failures should be tracked for retry instead');
+    });
+
+    await test('state-file conflicts resolve to the union of both sides', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'techwire-merge-'));
+      const file = path.join(dir, 'state.json');
+
+      // Outside a conflicted index the resolver must preserve, never truncate.
+      fs.writeFileSync(
+        file,
+        JSON.stringify({ updatedAt: 'x', urls: ['https://a.com/1', 'https://a.com/2'] }, null, 2)
+      );
+      execFileSync(process.execPath, [path.join(repoRoot, 'scripts/merge-state.mjs'), file], {
+        stdio: 'ignore',
+      });
+      assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')).urls, [
+        'https://a.com/1',
+        'https://a.com/2',
+      ]);
+
+      // A half-written/conflicted file must not crash the resolver.
+      fs.writeFileSync(file, '<<<<<<< HEAD\nnot json\n>>>>>>> other\n');
+      execFileSync(process.execPath, [path.join(repoRoot, 'scripts/merge-state.mjs'), file], {
+        stdio: 'ignore',
+      });
+      assert.ok(Array.isArray(JSON.parse(fs.readFileSync(file, 'utf8')).urls));
+
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+
+    await test('the push step recovers from a state-file rebase conflict', () => {
+      const workflow = fs.readFileSync(
+        path.join(repoRoot, '.github/workflows/scrape-and-publish.yml'),
+        'utf8'
+      );
+      const push = workflow.slice(workflow.indexOf('- name: Commit and push'));
+      assert.ok(/merge-state\.mjs/.test(push), 'push step must auto-resolve the state file');
+      assert.ok(/rebase --continue/.test(push), 'and finish the rebase rather than aborting');
+      assert.ok(
+        /Unresolvable conflict/.test(push),
+        'but still fail loudly on a conflict in any other path'
+      );
+    });
+
+    await test('a run that publishes nothing after attempts exits non-zero', () => {
+      const scrape = fs.readFileSync(path.join(repoRoot, 'scripts/scrape.mjs'), 'utf8');
+      assert.ok(
+        /attempts > 0 && published\.length === 0[\s\S]*process\.exitCode = 1/.test(scrape),
+        'an empty publish after real attempts must fail the workflow, not report success'
+      );
     });
   } finally {
     if (previousRoot === undefined) delete process.env.CONTENT_ROOT;

@@ -13,7 +13,10 @@ import { fetchWithTimeout, log, withRetry } from './utils.mjs';
  * Both providers are asked for strict JSON so the output maps 1:1 onto front-matter.
  */
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest';
+// Google retired the Gemini 1.5 family (including `gemini-1.5-flash-latest`)
+// in late 2025 — those model ids now return HTTP 404 on every call. Keep this
+// pointed at a currently-served free-tier model and override with GEMINI_MODEL.
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 export function resolveProvider() {
@@ -146,8 +149,15 @@ async function callGemini(userPrompt) {
 
   if (!response.ok) {
     const detail = await response.text().catch(() => '');
-    const error = new Error(`Gemini HTTP ${response.status}: ${detail.slice(0, 300)}`);
-    if ([400, 401, 403].includes(response.status)) error.fatal = true;
+    // A 404 means the model id does not exist (or was retired) — retrying it
+    // three times per article just burns the run silently, so treat it as fatal
+    // and say exactly which model failed.
+    const hint =
+      response.status === 404
+        ? ` — model "${GEMINI_MODEL}" is not served by the Gemini API. Set GEMINI_MODEL to a current model (see https://ai.google.dev/gemini-api/docs/models).`
+        : '';
+    const error = new Error(`Gemini HTTP ${response.status}: ${detail.slice(0, 300)}${hint}`);
+    if ([400, 401, 403, 404].includes(response.status)) error.fatal = true;
     throw error;
   }
 
