@@ -17,7 +17,10 @@ export const siteConfig = {
   url: (process.env.NEXT_PUBLIC_SITE_URL || 'https://techwire.pages.dev').replace(/\/$/, ''),
   basePath,
   locale: 'en_US',
-  email: 'editorial@techwire.example',
+  // Single source of truth for the public contact address. Rendered on
+  // /about, /contact, /privacy-policy and /terms-of-service, and used as the
+  // contact in the scraper's User-Agent (see scripts/config.mjs).
+  email: 'editorial.techwire@gmail.com',
   // Google AdSense publisher id, e.g. "ca-pub-1234567890123456".
   // Leave empty until AdSense approves the site — the placeholders stay inert but present.
   adsenseClient: process.env.NEXT_PUBLIC_ADSENSE_CLIENT || '',
