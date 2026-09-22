@@ -178,7 +178,7 @@ async function main() {
   });
 
   await test('normalizeUrl strips tracking params and www', () => {
-    assert.equal(normalizeUrl('https://www.example.com/a/b?utm_source=rss&id=7#frag'), 'https://example.com/a/b?id=7');
+    assert.equal(normalizeUrl('https://www.fixture.test/a/b?utm_source=rss&id=7#frag'), 'https://fixture.test/a/b?id=7');
   });
 
   await test('similarity detects restatements of the same headline', () => {
@@ -363,15 +363,15 @@ async function main() {
       assert.ok(dup, 'should have flagged the duplicate URL');
     });
     await test('rejects a near-identical title from another outlet', () => {
-      const dup = findDuplicate(index, { title: 'Quantum Error Correction Hits Practical Milestone', url: 'https://other.example.com/story' });
+      const dup = findDuplicate(index, { title: 'Quantum Error Correction Hits Practical Milestone', url: 'https://other.fixture.test/story' });
       assert.ok(dup, 'should have flagged the similar title');
     });
     await test('accepts a genuinely new story', () => {
-      const dup = findDuplicate(index, { title: 'EU Opens Antitrust Inquiry Into App Store Fees', url: 'https://other.example.com/eu' });
+      const dup = findDuplicate(index, { title: 'EU Opens Antitrust Inquiry Into App Store Fees', url: 'https://other.fixture.test/eu' });
       assert.equal(dup, null);
     });
     await test('generates a collision-free slug when titles repeat', () => {
-      const second = uniqueSlug(index, 'Quantum Error Correction Hits a Milestone', 'https://other.example.com/x');
+      const second = uniqueSlug(index, 'Quantum Error Correction Hits a Milestone', 'https://other.fixture.test/x');
       assert.notEqual(second, slug);
     });
     console.log('\nunsplash attribution');
@@ -431,7 +431,7 @@ async function main() {
         image: '/images/thumbnails/credited-story.jpg',
         imageCreditName: 'Jane Doe',
         imageCreditUrl: 'https://unsplash.com/@janedoe?utm_source=techwire&utm_medium=referral',
-        sourceUrl: 'https://example.com/credited',
+        sourceUrl: 'https://fixture.test/credited',
         sourceName: 'Example',
         body: '## Heading\n\nBody.',
         date: '2025-09-21',
@@ -450,8 +450,8 @@ async function main() {
         title: 'An Uncredited Story',
         description: 'Uses the source OG image.',
         keywords: ['tech'],
-        image: 'https://cdn.example.com/og.jpg',
-        sourceUrl: 'https://example.com/uncredited',
+        image: 'https://cdn.fixture.test/og.jpg',
+        sourceUrl: 'https://fixture.test/uncredited',
         sourceName: 'Example',
         body: '## Heading\n\nBody.',
         date: '2025-09-21',

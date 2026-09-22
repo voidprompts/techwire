@@ -4,8 +4,6 @@ description: "In-house accelerators are eroding merchant silicon's grip on AI da
 date: "2025-09-17"
 keywords: ["custom silicon", "semiconductors", "data centers", "ai infrastructure", "gpu"]
 image: "/images/seed-silicon.jpg"
-source_url: "https://example.com/custom-silicon-data-center"
-source_name: "Example Tech Wire"
 author: "TechWire Desk"
 ---
 

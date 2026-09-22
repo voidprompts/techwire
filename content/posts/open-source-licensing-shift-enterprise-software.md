@@ -4,8 +4,6 @@ description: "Source-available licenses are replacing true open source in infras
 date: "2025-09-18"
 keywords: ["open source", "software licensing", "enterprise software", "developer tools", "cloud computing"]
 image: "/images/seed-licensing.jpg"
-source_url: "https://example.com/open-source-licensing"
-source_name: "Example Tech Wire"
 author: "TechWire Desk"
 ---
 
