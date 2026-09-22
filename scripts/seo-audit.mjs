@@ -74,7 +74,7 @@ function* nodes(value) {
 const pages = htmlPages();
 const sitemap = read(path.join(OUT, 'sitemap.xml'));
 const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-const origin = new URL(sitemapUrls[0] || 'https://example.com').origin;
+const origin = new URL(sitemapUrls[0] || 'https://techwire.invalid').origin;
 const toRoute = (url) => new URL(url).pathname;
 
 console.log(`\nseo-audit: ${pages.length} pages in ${path.relative(process.cwd(), OUT)}\n`);

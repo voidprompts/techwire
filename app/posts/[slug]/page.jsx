@@ -15,6 +15,7 @@ import {
   getPostBySlug,
   getRelatedPosts,
   renderMarkdown,
+  shouldRenderInArticleAd,
   splitHtmlForMidAd,
 } from '../../../lib/posts';
 import { absoluteUrl, assetUrl, ogImages, publisherSchema, twitterImages } from '../../../lib/seo.mjs';
@@ -65,7 +66,8 @@ export default async function PostPage({ params }) {
   if (!post) notFound();
 
   const html = await renderMarkdown(post.content);
-  const [firstHalf, secondHalf] = splitHtmlForMidAd(html);
+  const allowInArticleAd = shouldRenderInArticleAd(post.wordCount);
+  const [firstHalf, secondHalf] = allowInArticleAd ? splitHtmlForMidAd(html) : [html, ''];
   const related = getRelatedPosts(post, 3);
   const latest = getAllPosts()
     .filter((p) => p.slug !== post.slug)
@@ -122,7 +124,7 @@ export default async function PostPage({ params }) {
 
           <Prose html={firstHalf} />
 
-          {/* AD SLOT 2 — mid-way through the article body */}
+          {/* AD SLOT 2 — mid-way through long articles only (see MIN_WORDS_FOR_IN_ARTICLE_AD). */}
           {secondHalf && <AdUnit variant="in-article" />}
 
           <Prose html={secondHalf} />

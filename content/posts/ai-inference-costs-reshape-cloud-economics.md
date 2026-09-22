@@ -6,8 +6,6 @@ keywords: ["ai infrastructure", "inference costs", "cloud computing", "gpu", "da
 image: "/images/thumbnails/ai-inference-costs-reshape-cloud-economics.jpg"
 image_credit_name: "Taylor Vick"
 image_credit_url: "https://unsplash.com/@tvick?utm_source=techwire&utm_medium=referral"
-source_url: "https://example.com/ai-inference-costs"
-source_name: "Example Tech Wire"
 author: "TechWire Desk"
 ---
 
