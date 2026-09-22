@@ -1,6 +1,6 @@
 ---
-title: "How to Protect PC From Power Surge and Electrical Grid Drops"
-description: "Learn how to protect PC from power surge risks, grid blackouts, and electrical storms using UPS backups, isolation steps, and secondary safeguards."
+title: "How to Protect a PC From Power Surges and Grid Outages"
+description: "Protect a PC from surges and outages with safer shutdown, UPS, and surge-protection guidance—including when to call a licensed electrician."
 date: "2026-09-22"
 keywords: ["protect pc from power surge", "uninterruptible power supply", "desktop hardware protection", "surge protector vs ups", "electrical storm protection", "whole house surge suppressor"]
 category: "gadgets-hardware"
@@ -9,7 +9,7 @@ image_credit_name: "Babak Eshaghian"
 image_credit_url: "https://unsplash.com/@babak22ir?utm_source=techwire&utm_medium=referral"
 source_url: "https://engadget.com/2261632/why-important-unplug-pc-power-outage"
 source_name: "Engadget"
-author: "TechWire Desk"
+author: "TechWire Editorial Desk"
 ---
 When severe storms or grid blackouts occur, electronic components face severe risks from sudden voltage spikes and erratic power restoration. Disconnecting desktop computers, networking routers, and high-value appliances from wall outlets remains the most reliable safeguard against catastrophic hardware failure during unexpected electrical disruptions. Combining physical isolation with multi-layered suppression hardware protects sensitive integrated circuits from irreversible thermal damage.
 
@@ -36,6 +36,10 @@ An uninterruptible power supply expands upon basic surge suppression by integrat
 * Prevents data corruption by maintaining power during transient brownouts lasting a few seconds.
 * Grants automation software or users adequate time to execute a clean operating system shutdown, preserving active volatile memory structures and open file handles.
 * Filters harmonic distortion and cleans incoming grid AC power before delivering it to sensitive PC components.
+
+## Electrical safety comes first
+
+Never open a UPS, power supply, breaker panel, outlet, or hard-wired surge device unless you are qualified to service it. These products can retain dangerous voltage after they are unplugged. Do not handle plugs or equipment in standing water, and do not disconnect equipment while lightning is nearby. If an outlet is hot, scorched, buzzing, loose, or repeatedly trips a breaker, stop using it and contact a licensed electrician. Follow the equipment manufacturer’s instructions and local electrical code; a UPS or plug-in protector cannot repair unsafe building wiring.
 
 ## Operational Safeguards During Severe Weather Events
 

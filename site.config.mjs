@@ -50,6 +50,10 @@ export const siteConfig = {
   // thin content, and at ~4 posts/run the pipeline would otherwise manufacture
   // hundreds of them. They stay crawlable/followable so link equity still flows.
   topicIndexThreshold: Number(process.env.NEXT_PUBLIC_TOPIC_INDEX_THRESHOLD || 3),
+  // Category hubs follow the same quality floor. New sections remain useful
+  // navigation (`noindex, follow`) without entering search or the sitemap until
+  // they contain enough distinct editorial coverage.
+  categoryIndexThreshold: Number(process.env.NEXT_PUBLIC_CATEGORY_INDEX_THRESHOLD || 3),
   adSlots: {
     belowTitle: process.env.NEXT_PUBLIC_ADSLOT_BELOW_TITLE || '',
     inArticle: process.env.NEXT_PUBLIC_ADSLOT_IN_ARTICLE || '',

@@ -6,7 +6,7 @@ keywords: ["ai infrastructure", "inference costs", "cloud computing", "gpu", "da
 image: "/images/thumbnails/ai-inference-costs-reshape-cloud-economics.jpg"
 image_credit_name: "Taylor Vick"
 image_credit_url: "https://unsplash.com/@tvick?utm_source=techwire&utm_medium=referral"
-author: "TechWire Desk"
+author: "TechWire Editorial Desk"
 ---
 
 For two years the industry talked about training as though it were the only line item that mattered. That framing is now obsolete. The dominant, recurring cost of running an AI product is inference — the compute burned every single time a user asks a model to do something — and it is quietly reshaping how cloud providers price capacity, how startups raise money, and which products survive contact with a real user base.

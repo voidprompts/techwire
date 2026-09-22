@@ -94,7 +94,7 @@ export default async function PostPage({ params }) {
               <span aria-hidden="true">•</span>
               <span>{post.readingTime} min read</span>
               <span aria-hidden="true">•</span>
-              <span>{post.author}</span>
+              <Link href="/about">{post.author}</Link>
             </div>
 
             {post.description && <p className="article-standfirst">{post.description}</p>}

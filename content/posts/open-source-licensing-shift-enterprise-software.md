@@ -4,7 +4,7 @@ description: "Source-available licenses are replacing true open source in infras
 date: "2025-09-18"
 keywords: ["open source", "software licensing", "enterprise software", "developer tools", "cloud computing"]
 image: "/images/seed-licensing.jpg"
-author: "TechWire Desk"
+author: "TechWire Editorial Desk"
 ---
 
 A steady procession of infrastructure companies has now moved core products away from permissive open source licenses toward source-available terms that restrict commercial redistribution. Each individual move gets framed as a narrow response to cloud providers reselling someone else's work. Taken together, they represent something larger: the collapse of a business model that the industry spent fifteen years assuming was settled.

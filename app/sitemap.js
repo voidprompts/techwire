@@ -80,7 +80,7 @@ export default function sitemap() {
         silo,
         inSilo: posts.filter((post) => post.silo.slug === silo.slug),
       }))
-      .filter(({ inSilo }) => inSilo.length > 0)
+      .filter(({ inSilo }) => inSilo.length >= siteConfig.categoryIndexThreshold)
       .map(({ silo, inSilo }) => ({
         url: absoluteUrl(`/category/${silo.slug}`),
         lastModified: postDate(inSilo[0]),

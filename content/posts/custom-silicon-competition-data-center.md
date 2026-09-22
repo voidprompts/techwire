@@ -4,7 +4,7 @@ description: "In-house accelerators are eroding merchant silicon's grip on AI da
 date: "2025-09-17"
 keywords: ["custom silicon", "semiconductors", "data centers", "ai infrastructure", "gpu"]
 image: "/images/seed-silicon.jpg"
-author: "TechWire Desk"
+author: "TechWire Editorial Desk"
 ---
 
 Every major cloud provider now designs its own accelerators, and several are on their third or fourth generation. Individually these projects look like expensive vanity engineering. Collectively they are the most credible challenge yet to the merchant silicon vendors that have captured most of the value created by the AI buildout.
