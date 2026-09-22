@@ -384,7 +384,9 @@ runs `next build` directly instead of invoking npm lifecycle hooks.
 | New articles not appearing | Check the **Actions** tab — the scraper commits, Cloudflare only reacts to the push. |
 | Scrape run is green but no article was published | Open the run summary: it now prints candidates attempted / published / failed. A run that attempts candidates and publishes none exits non-zero, so a green tick with zero posts should no longer be possible. |
 | Scraper log shows `Gemini HTTP 404 … model is not served` | The configured model id no longer exists. Google retired the Gemini 1.5 family in late 2025. Set the `GEMINI_MODEL` variable to a current model, e.g. `gemini-2.5-flash`. |
-| A commit lands but no deployment starts | The commit message must not contain `[skip ci]` / `[CI Skip]` — both `deploy.yml` and Cloudflare Pages honour that marker and will skip the build. |
+| A commit lands but no Cloudflare deployment starts | The commit message must not contain `[skip ci]` / `[CI Skip]` / `[CF-Pages-Skip]`. Cloudflare Pages honours these markers and skips the build **without showing a check run**, so it looks like nothing happened. The autopilot no longer adds one. |
+| Scraper log shows `No AI key reached this job` | The key is an *environment* secret, not a *repository* secret. Environment-scoped secrets are only exposed to jobs that declare that `environment:`. Re-add it under **Settings → Secrets and variables → Actions → Repository secrets**. |
+| Every commit has a red X from "Deploy to GitHub Pages" | That workflow is manual-only now, since this project deploys via Cloudflare. It failed on every push because GitHub Pages was never enabled. |
 
 ### GitHub Pages
 

@@ -60,7 +60,25 @@ jobs:
       - name: Verify pipeline integrity
         run: node scripts/selftest.mjs
 
-      # 3. Run the scraper, injecting the AI key safely from GitHub Secrets.
+      # 3. Fail fast if no AI key actually reached the job.
+      #    Secrets scoped to an *environment* are not exposed to a job that
+      #    does not declare that environment, so the repo can look correctly
+      #    configured while the scraper still runs keyless. Never print values.
+      - name: Check AI credentials
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
+        run: |
+          echo "GEMINI_API_KEY present: ${GEMINI_API_KEY:+yes}${GEMINI_API_KEY:-NO}"
+          echo "GROQ_API_KEY present:   ${GROQ_API_KEY:+yes}${GROQ_API_KEY:-NO}"
+          echo "UNSPLASH_ACCESS_KEY:    ${UNSPLASH_ACCESS_KEY:+yes}${UNSPLASH_ACCESS_KEY:-no (optional)}"
+          if [ -z "$GEMINI_API_KEY" ] && [ -z "$GROQ_API_KEY" ]; then
+            echo "::error::No AI key reached this job. Add GEMINI_API_KEY or GROQ_API_KEY as a *repository* secret (Settings -> Secrets and variables -> Actions -> Repository secrets). Environment-scoped secrets are not visible here."
+            exit 1
+          fi
+
+      # 4. Run the scraper, injecting the AI key safely from GitHub Secrets.
       - name: Run scraper
         id: scrape
         env:
@@ -78,7 +96,7 @@ jobs:
             node scripts/scrape.mjs
           fi
 
-      # 4. Check whether the scraper actually produced new ARTICLES.
+      # 5. Check whether the scraper actually produced new ARTICLES.
       #    The bookkeeping file (content/.scraper-state.json) changes on every
       #    run even when nothing is published, so it must never by itself count
       #    as "new content" — otherwise the job commits an empty publish and
@@ -98,7 +116,7 @@ jobs:
             echo "No new articles this run — state-only changes are not committed."
           fi
 
-      # 5. Commit and push back to the branch.
+      # 6. Commit and push back to the branch.
       #    NOTE: do NOT put "[skip ci]" in this message. This workflow has no
       #    `push` trigger, so there is no self-trigger loop to prevent — but the
       #    marker DOES stop deploy.yml from running and is also honoured by
