@@ -17,6 +17,7 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 // Resolved from this file, not cwd — the store tests repoint CONTENT_ROOT at a
@@ -530,6 +531,47 @@ async function main() {
         'a thrown error must not add the URL to the permanent rejected list'
       );
       assert.ok(/failures\.push/.test(catchBlock), 'failures should be tracked for retry instead');
+    });
+
+    await test('state-file conflicts resolve to the union of both sides', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'techwire-merge-'));
+      const file = path.join(dir, 'state.json');
+
+      // Outside a conflicted index the resolver must preserve, never truncate.
+      fs.writeFileSync(
+        file,
+        JSON.stringify({ updatedAt: 'x', urls: ['https://a.com/1', 'https://a.com/2'] }, null, 2)
+      );
+      execFileSync(process.execPath, [path.join(repoRoot, 'scripts/merge-state.mjs'), file], {
+        stdio: 'ignore',
+      });
+      assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')).urls, [
+        'https://a.com/1',
+        'https://a.com/2',
+      ]);
+
+      // A half-written/conflicted file must not crash the resolver.
+      fs.writeFileSync(file, '<<<<<<< HEAD\nnot json\n>>>>>>> other\n');
+      execFileSync(process.execPath, [path.join(repoRoot, 'scripts/merge-state.mjs'), file], {
+        stdio: 'ignore',
+      });
+      assert.ok(Array.isArray(JSON.parse(fs.readFileSync(file, 'utf8')).urls));
+
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+
+    await test('the push step recovers from a state-file rebase conflict', () => {
+      const workflow = fs.readFileSync(
+        path.join(repoRoot, '.github/workflows/scrape-and-publish.yml'),
+        'utf8'
+      );
+      const push = workflow.slice(workflow.indexOf('- name: Commit and push'));
+      assert.ok(/merge-state\.mjs/.test(push), 'push step must auto-resolve the state file');
+      assert.ok(/rebase --continue/.test(push), 'and finish the rebase rather than aborting');
+      assert.ok(
+        /Unresolvable conflict/.test(push),
+        'but still fail loudly on a conflict in any other path'
+      );
     });
 
     await test('a run that publishes nothing after attempts exits non-zero', () => {

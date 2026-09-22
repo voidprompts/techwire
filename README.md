@@ -387,6 +387,8 @@ runs `next build` directly instead of invoking npm lifecycle hooks.
 | A commit lands but no Cloudflare deployment starts | The commit message must not contain `[skip ci]` / `[CI Skip]` / `[CF-Pages-Skip]`. Cloudflare Pages honours these markers and skips the build **without showing a check run**, so it looks like nothing happened. The autopilot no longer adds one. |
 | Scraper log shows `No AI key reached this job` | The key is an *environment* secret, not a *repository* secret. Environment-scoped secrets are only exposed to jobs that declare that `environment:`. Re-add it under **Settings → Secrets and variables → Actions → Repository secrets**. |
 | Every commit has a red X from "Deploy to GitHub Pages" | That workflow is manual-only now, since this project deploys via Cloudflare. It failed on every push because GitHub Pages was never enabled. |
+| `CONFLICT (content): content/.scraper-state.json` in the push step | Two runs touched the same branch. The state file is rewritten every run, so it always collides. The push step now resolves it as a set-union and retries instead of discarding the run. |
+| Re-running an old failed run changes nothing | **Re-runs replay the workflow file and code from that run's original commit**, not the current one. After a fix is merged, always start a *fresh* run from the Actions tab rather than pressing "Re-run jobs" on the old one. |
 
 ### GitHub Pages
 

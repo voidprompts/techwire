@@ -125,13 +125,48 @@ jobs:
       - name: Commit and push
         if: steps.changes.outputs.changed == 'true' && github.event.inputs.dry_run != 'true'
         run: |
+          set -euo pipefail
           git config user.name  "techwire-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add content/ public/images/thumbnails/
           git commit -m "chore: publish ${{ steps.changes.outputs.new_posts }} new article(s)"
-          # Rebase in case a human pushed while we were generating.
-          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+          # Push with rebase-and-retry. The bookkeeping state file is rewritten
+          # by every run, so concurrent runs reliably collide on it. Left alone
+          # that conflict aborts the rebase and discards a run whose AI work is
+          # already paid for — so resolve it as the set-union it actually is.
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              echo "Pushed on attempt ${attempt}."
+              exit 0
+            fi
+
+            echo "Push rejected (attempt ${attempt}) — rebasing onto the new tip."
+            if ! git pull --rebase --autostash origin "${GITHUB_REF_NAME}"; then
+              CONFLICTS="$(git diff --name-only --diff-filter=U)"
+              if [ -n "${CONFLICTS}" ]; then
+                echo "Conflicted paths: ${CONFLICTS}"
+                # Only the state file is safely auto-resolvable. Anything else
+                # is a real conflict and must stop the run.
+                if [ "${CONFLICTS}" = "content/.scraper-state.json" ]; then
+                  node scripts/merge-state.mjs content/.scraper-state.json
+                  git add content/.scraper-state.json
+                  GIT_EDITOR=true git rebase --continue
+                else
+                  echo "::error::Unresolvable conflict in: ${CONFLICTS}"
+                  git rebase --abort || true
+                  exit 1
+                fi
+              else
+                echo "::error::Rebase failed without conflicts."
+                git rebase --abort || true
+                exit 1
+              fi
+            fi
+          done
+
+          echo "::error::Could not push after 3 attempts."
+          exit 1
 
       - name: Summary
         if: always()
