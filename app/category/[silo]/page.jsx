@@ -17,8 +17,10 @@ export function generateStaticParams() {
 export function generateMetadata({ params }) {
   const silo = getSilo(params.silo);
   if (!silo) return { title: 'Category not found' };
+  const isEmpty = getPostsBySilo(silo.slug).length === 0;
   return {
     title: `${silo.name} news and analysis`,
+    ...(isEmpty ? { robots: { index: false, follow: true } } : {}),
     description: silo.description,
     alternates: { canonical: `/category/${silo.slug}/` },
     openGraph: {

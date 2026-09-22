@@ -250,19 +250,24 @@ console.log('\nthin content');
     const count = (html.match(/\/posts\/[^"']+\/"/g) || []).length;
     return count < 3;
   });
+  const categoryPages = pages.filter((p) => /^\/category\/[^/]+\/$/.test(p.route));
+  const emptyCategories = categoryPages.filter((p) => /class="empty-state"/.test(read(p.file)));
+  const indexableEmptyCategories = emptyCategories.filter((p) => !/noindex/.test(robotsOf(read(p.file))));
   check(
-    'no one-post topic page is indexable',
-    thinButIndexable.length === 0,
-    thinButIndexable.map((p) => p.route).join(', ')
+    'no thin topic or empty category page is indexable',
+    thinButIndexable.length === 0 && indexableEmptyCategories.length === 0,
+    [...thinButIndexable, ...indexableEmptyCategories].map((p) => p.route).join(', ')
   );
 
   const noindexedInSitemap = topicPages
     .filter((p) => /noindex/.test(robotsOf(read(p.file))))
     .filter((p) => sitemapTopics.has(p.route));
+  const sitemapCategories = new Set(sitemapUrls.map(toRoute).filter((p) => /^\/category\/./.test(p)));
+  const noindexedCategoriesInSitemap = emptyCategories.filter((p) => sitemapCategories.has(p.route));
   check(
-    'no noindex topic page is advertised in the sitemap',
-    noindexedInSitemap.length === 0,
-    noindexedInSitemap.map((p) => p.route).join(', ')
+    'no noindex topic or empty category page is advertised in the sitemap',
+    noindexedInSitemap.length === 0 && noindexedCategoriesInSitemap.length === 0,
+    [...noindexedInSitemap, ...noindexedCategoriesInSitemap].map((p) => p.route).join(', ')
   );
 
   const home = read(path.join(OUT, 'index.html'));

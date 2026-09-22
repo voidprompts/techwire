@@ -54,8 +54,9 @@ export default function AboutPage() {
             </p>
             <h3>Attribution</h3>
             <p>
-              Each briefing carries a clearly marked reporting reference pointing back to the outlet
-              that did the original journalism. We consider that link a duty, not a courtesy.
+              When a briefing is based on another publication’s reporting, it carries a clearly marked
+              reporting reference pointing back to the outlet that did the original journalism. We
+              consider that link a duty, not a courtesy.
             </p>
             <h3>Proportion over sensationalism</h3>
             <p>

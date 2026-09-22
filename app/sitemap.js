@@ -75,15 +75,18 @@ export default function sitemap() {
       priority: route.priority,
     })),
     // Category hubs are primary landing pages — high priority.
-    ...SILOS.map((silo) => {
-      const inSilo = posts.filter((post) => post.silo.slug === silo.slug);
-      return {
+    ...SILOS
+      .map((silo) => ({
+        silo,
+        inSilo: posts.filter((post) => post.silo.slug === silo.slug),
+      }))
+      .filter(({ inSilo }) => inSilo.length > 0)
+      .map(({ silo, inSilo }) => ({
         url: absoluteUrl(`/category/${silo.slug}`),
-        lastModified: inSilo[0] ? postDate(inSilo[0]) : oldest,
+        lastModified: postDate(inSilo[0]),
         changeFrequency: 'daily',
         priority: 0.85,
-      };
-    }),
+      })),
     ...posts.map((post) => ({
       url: absoluteUrl(`/posts/${post.slug}`),
       lastModified: postDate(post),
