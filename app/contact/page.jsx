@@ -4,7 +4,7 @@ export const metadata = {
   title: 'Contact',
   description:
     'Reach the TechWire editorial desk for story tips, factual corrections, rights and takedown requests, or advertising and partnership enquiries.',
-  alternates: { canonical: '/contact' },
+  alternates: { canonical: '/contact/' },
 };
 
 const REASONS = [

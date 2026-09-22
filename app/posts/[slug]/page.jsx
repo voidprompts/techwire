@@ -17,6 +17,7 @@ import {
   renderMarkdown,
   splitHtmlForMidAd,
 } from '../../../lib/posts';
+import { absoluteUrl, assetUrl, ogImages, publisherSchema, twitterImages } from '../../../lib/seo.mjs';
 import siteConfig from '../../../site.config.mjs';
 
 /** Pre-render one static HTML file per markdown article. */
@@ -28,7 +29,9 @@ export function generateMetadata({ params }) {
   const post = getPostBySlug(params.slug);
   if (!post) return { title: 'Article not found' };
 
-  const url = `/posts/${post.slug}`;
+  // Trailing slash matches next.config's trailingSlash:true, so the canonical
+  // and the sitemap entry point at the same non-redirecting URL.
+  const url = `/posts/${post.slug}/`;
   return {
     title: post.title,
     description: post.description,
@@ -39,15 +42,20 @@ export function generateMetadata({ params }) {
       title: post.title,
       description: post.description,
       url,
-      publishedTime: post.date,
+      siteName: siteConfig.name,
+      publishedTime: `${post.date}T00:00:00.000Z`,
+      modifiedTime: `${post.date}T00:00:00.000Z`,
+      authors: [post.author],
+      section: post.silo.name,
       tags: post.keywords,
-      images: post.image ? [{ url: post.image, width: 1200, height: 630, alt: post.title }] : undefined,
+      // Absolute url, with the site card as a fallback for imageless posts.
+      images: ogImages(post.image, post.title),
     },
     twitter: {
       card: 'summary_large_image',
       title: post.title,
       description: post.description,
-      images: post.image ? [post.image] : undefined,
+      images: twitterImages(post.image),
     },
   };
 }
@@ -63,7 +71,7 @@ export default async function PostPage({ params }) {
     .filter((p) => p.slug !== post.slug)
     .slice(0, 6);
   const topics = getAllTopics().slice(0, 12);
-  const canonical = `${siteConfig.url}/posts/${post.slug}`;
+  const canonical = absoluteUrl(`/posts/${post.slug}`);
 
   return (
     <div className="container page">
@@ -160,14 +168,20 @@ export default async function PostPage({ params }) {
               '@type': 'NewsArticle',
               headline: post.title,
               description: post.description,
-              datePublished: post.date,
-              dateModified: post.date,
-              image: post.image ? [post.image] : undefined,
+              datePublished: `${post.date}T00:00:00.000Z`,
+              dateModified: `${post.date}T00:00:00.000Z`,
+              // Must be absolute — a relative /images/... path fails
+              // rich-result parsing without any visible error.
+              image: [post.image ? assetUrl(post.image) : assetUrl(siteConfig.ogImage.url)],
               keywords: post.keywords.join(', '),
               inLanguage: 'en',
               mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
-              author: { '@type': 'Organization', name: post.author },
-              publisher: { '@type': 'Organization', name: siteConfig.name, url: siteConfig.url },
+              url: canonical,
+              articleSection: post.silo.name,
+              wordCount: post.wordCount,
+              author: { '@type': 'Organization', name: post.author, url: absoluteUrl('/about') },
+              // Publisher needs a logo for article rich-result eligibility.
+              publisher: publisherSchema(),
             }}
           />
         </article>

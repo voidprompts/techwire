@@ -5,6 +5,7 @@ import Sidebar from '../../../components/Sidebar';
 import AdUnit from '../../../components/AdUnit';
 import JsonLd from '../../../components/JsonLd';
 import { getAllPosts, getAllTopics, getPostsBySilo } from '../../../lib/posts';
+import { absoluteUrl, ogImages, publisherSchema, twitterImages } from '../../../lib/seo.mjs';
 import { SILOS, getSilo } from '../../../lib/silos.mjs';
 import siteConfig from '../../../site.config.mjs';
 
@@ -19,12 +20,20 @@ export function generateMetadata({ params }) {
   return {
     title: `${silo.name} news and analysis`,
     description: silo.description,
-    alternates: { canonical: `/category/${silo.slug}` },
+    alternates: { canonical: `/category/${silo.slug}/` },
     openGraph: {
       type: 'website',
       title: `${silo.name} — ${siteConfig.name}`,
       description: silo.description,
-      url: `/category/${silo.slug}`,
+      url: absoluteUrl(`/category/${silo.slug}`),
+      siteName: siteConfig.name,
+      images: ogImages(),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${silo.name} — ${siteConfig.name}`,
+      description: silo.description,
+      images: twitterImages(),
     },
   };
 }
@@ -90,15 +99,28 @@ export default function CategoryPage({ params }) {
             data={{
               '@context': 'https://schema.org',
               '@type': 'CollectionPage',
+              '@id': `${absoluteUrl(`/category/${silo.slug}`)}#collection`,
               name: `${silo.name} — ${siteConfig.name}`,
               description: silo.description,
-              url: `${siteConfig.url}/category/${silo.slug}`,
-              hasPart: posts.slice(0, 20).map((post) => ({
-                '@type': 'NewsArticle',
-                headline: post.title,
-                url: `${siteConfig.url}/posts/${post.slug}`,
-                datePublished: post.date,
-              })),
+              url: absoluteUrl(`/category/${silo.slug}`),
+              inLanguage: 'en-US',
+              isPartOf: { '@id': `${siteConfig.url}/#website` },
+              publisher: publisherSchema(),
+              // An ItemList of links, not inlined NewsArticle stubs. A bare
+              // NewsArticle without publisher/logo/image is an incomplete
+              // article entity and Google reports it as invalid markup; the
+              // full article entity lives on the post page itself.
+              mainEntity: {
+                '@type': 'ItemList',
+                itemListOrder: 'https://schema.org/ItemListOrderDescending',
+                numberOfItems: posts.length,
+                itemListElement: posts.slice(0, 20).map((post, index) => ({
+                  '@type': 'ListItem',
+                  position: index + 1,
+                  name: post.title,
+                  url: absoluteUrl(`/posts/${post.slug}`),
+                })),
+              },
             }}
           />
         </div>

@@ -52,6 +52,9 @@ jobs:
           # For a project site (user.github.io/repo) Pages provides the subpath here.
           NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
           NEXT_PUBLIC_SITE_URL: ${{ steps.pages.outputs.origin }}${{ steps.pages.outputs.base_path }}
+          NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${{ vars.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }}
+          NEXT_PUBLIC_BING_SITE_VERIFICATION: ${{ vars.NEXT_PUBLIC_BING_SITE_VERIFICATION }}
+          NEXT_PUBLIC_TOPIC_INDEX_THRESHOLD: ${{ vars.NEXT_PUBLIC_TOPIC_INDEX_THRESHOLD }}
           NEXT_PUBLIC_ADSENSE_CLIENT: ${{ vars.NEXT_PUBLIC_ADSENSE_CLIENT }}
           NEXT_PUBLIC_ADSLOT_BELOW_TITLE: ${{ vars.NEXT_PUBLIC_ADSLOT_BELOW_TITLE }}
           NEXT_PUBLIC_ADSLOT_IN_ARTICLE: ${{ vars.NEXT_PUBLIC_ADSLOT_IN_ARTICLE }}

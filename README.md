@@ -23,6 +23,7 @@ RSS / HN / Reddit ──▶ extract ──▶ de-duplicate ──▶ free AI rew
 - [The scraper](#the-scraper)
 - [Deployment](#deployment)
 - [AdSense setup](#adsense-setup)
+- [SEO](#seo)
 - [Content format](#content-format)
 - [Customisation](#customisation)
 - [Troubleshooting](#troubleshooting)
@@ -174,6 +175,9 @@ Copy `.env.example` → `.env.local`. Nothing here is required just to run the *
 | `UNSPLASH_APP_NAME` | `techwire` | Registered Unsplash app name; used as `utm_source` |
 | `NEXT_PUBLIC_SITE_URL` | `https://techwire.pages.dev` | Canonical origin for SEO tags |
 | `NEXT_PUBLIC_BASE_PATH` | *(empty)* | Only for GitHub Pages **project** sites, e.g. `/techwire` |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | *(empty)* | Search Console HTML-tag token (token only, not the whole tag) |
+| `NEXT_PUBLIC_BING_SITE_VERIFICATION` | *(empty)* | Bing Webmaster `msvalidate.01` token |
+| `NEXT_PUBLIC_TOPIC_INDEX_THRESHOLD` | `3` | Minimum posts before a `/topics/` page becomes indexable |
 | `NEXT_PUBLIC_ADSENSE_CLIENT` | *(empty)* | `ca-pub-…`; blank keeps ad slots inert |
 | `NEXT_PUBLIC_ADSLOT_*` | *(empty)* | Per-slot AdSense ids |
 | `CUSTOM_DOMAIN` | *(empty)* | Writes a `CNAME` into the build output |
@@ -458,6 +462,91 @@ To change the taxonomy, edit `SILOS` in `lib/silos.mjs`. Nav, footer, category p
 
 - **Desktop (≥1000px):** one horizontal row using the short labels (AI, Hardware, Software, Security, Business) so all five fit beside the brand without wrapping.
 - **Mobile (<1000px):** a hamburger disclosure menu showing full category names with their descriptions. Closes on route change, on Escape, and on backdrop click; locks body scroll while open; all rows are 52px touch targets.
+
+---
+
+## SEO
+
+Technical SEO is enforced by an audit that runs against the **rendered output**,
+not the source, because that is where these defects actually live:
+
+```bash
+npm run verify        # build + audit
+npm run seo:audit     # audit an existing ./out
+```
+
+It fails the build on any of 31 regressions across canonicals, share cards,
+icons, structured data, feed freshness, `lastmod` honesty and thin content.
+
+### The rules it enforces
+
+**Canonicals and the sitemap must agree.** `next.config.mjs` sets
+`trailingSlash: true`, so the only non-redirecting form of a page URL is
+`…/foo/`. Every canonical, sitemap entry, RSS link and JSON-LD `@id` is built
+through `absoluteUrl()` in `lib/seo.mjs` so they cannot drift apart. Build a URL
+by hand and the audit catches it.
+
+**Structured data is absolute.** A relative `/images/…` path in JSON-LD fails
+rich-results parsing silently — no error, just no rich result. `assetUrl()`
+handles this; `publisherSchema()` supplies the `Organization` + logo that article
+rich results require.
+
+**Every page has a share card.** `lib/seo.mjs` falls back to
+`/images/brand/og-default.jpg` when a page has no image of its own. Note that
+declaring `openGraph` in a page's `generateMetadata` **replaces** the root
+layout's block wholesale rather than merging, so a page that declares OG must
+also declare its images — the audit enforces this.
+
+### `lastmod` honesty
+
+The pipeline deploys ~5×/day. Stamping `new Date()` on evergreen pages made them
+look freshly edited several times a day while nothing changed, which trains
+Google to discount `lastmod` for the *entire* sitemap — including the article
+URLs where it is genuinely useful.
+
+Every `lastmod` now derives from content: posts use their front-matter `date`,
+hubs use the newest post they contain, and the hand-written pages read from
+`lib/page-revisions.mjs`. **When you meaningfully edit `/about`, `/contact` or a
+legal page, bump its date in that file in the same commit.** File mtime is
+deliberately not used — CI checks out fresh, so every mtime would just be the
+build timestamp in a different costume.
+
+### Thin-content policy for topic pages
+
+`/topics/<keyword>/` pages are minted from free-form article keywords, so the
+pipeline creates a new one for every new keyword it invents — 16 topic pages for
+4 posts at the time of writing, and hundreds within weeks at 4 posts per run.
+One-post tag pages are exactly the doorway pattern search-quality reviews flag.
+
+A topic is therefore `noindex, follow` until it holds
+`NEXT_PUBLIC_TOPIC_INDEX_THRESHOLD` posts (default 3). It stays crawlable and
+link equity still flows to the articles, but it never competes as a standalone
+result, and noindex'd topics are excluded from the sitemap. `/topics` lists
+established clusters first and emerging ones under a separate heading.
+
+Similarly, silo cards with zero posts are hidden from the homepage — an empty
+"0 briefings" card is a dead end for readers and a thin landing page for
+crawlers. They reappear automatically on first publish.
+
+### Search Console setup
+
+1. Search Console → Add property → URL prefix → your origin.
+2. Choose the **HTML tag** method and copy only the `content="…"` token.
+3. Set it as `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` (repo variable, or
+   `.env.local` for a local build) and redeploy.
+4. Verify, then submit `https://<your-domain>/sitemap.xml`.
+
+### Brand assets
+
+| File | Used for |
+|---|---|
+| `app/favicon.ico` | 16/32/48px favicon — Google shows this in results |
+| `app/icon.png`, `app/apple-icon.png` | 512px PWA icon, 180px Apple touch icon |
+| `public/images/brand/og-default.jpg` | 1200×630 fallback share card |
+| `public/images/brand/logo.png` | 600×160 publisher logo for `Organization` schema |
+
+Replace these with your own branding; keep the dimensions, which are declared in
+`site.config.mjs`.
 
 ---
 

@@ -7,7 +7,7 @@ export const metadata = {
   title: 'About TechWire',
   description:
     'TechWire is an independent technology curation index publishing original analytical briefings on the stories moving the technology industry.',
-  alternates: { canonical: '/about' },
+  alternates: { canonical: '/about/' },
 };
 
 export default function AboutPage() {

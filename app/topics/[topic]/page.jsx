@@ -3,6 +3,9 @@ import PostCard from '../../../components/PostCard';
 import Sidebar from '../../../components/Sidebar';
 import AdUnit from '../../../components/AdUnit';
 import { getAllPosts, getAllTopics, getPostsByTopic } from '../../../lib/posts';
+import { absoluteUrl, isTopicIndexable, ogImages, twitterImages } from '../../../lib/seo.mjs';
+import siteConfig from '../../../site.config.mjs';
+
 
 export function generateStaticParams() {
   return getAllTopics().map((topic) => ({ topic: topic.slug }));
@@ -10,14 +13,28 @@ export function generateStaticParams() {
 
 export function generateMetadata({ params }) {
   const topic = getAllTopics().find((t) => t.slug === params.topic);
-  if (!topic) return { title: 'Topic not found' };
+  if (!topic) return { title: 'Topic not found', robots: { index: false, follow: false } };
+  const indexable = isTopicIndexable(topic);
   return {
     title: `${topic.name} news and analysis`,
     // Aim for 120-160 chars so Google renders it verbatim instead of rewriting.
     description:
       `Original analysis of ${topic.name} from the TechWire desk: ${topic.count} in-depth ` +
       `${topic.count === 1 ? 'briefing' : 'briefings'} on what is changing, why it matters and what to watch next.`,
-    alternates: { canonical: `/topics/${topic.slug}` },
+    alternates: { canonical: `/topics/${topic.slug}/` },
+    robots: indexable
+      ? { index: true, follow: true }
+      : { index: false, follow: true, googleBot: { index: false, follow: true } },
+    openGraph: {
+      type: 'website',
+      title: `${topic.name} — ${siteConfig.name}`,
+      url: absoluteUrl(`/topics/${topic.slug}`),
+      siteName: siteConfig.name,
+      // Declaring openGraph at all replaces the layout's block wholesale, so
+      // the default share card has to be repeated here or the page ships none.
+      images: ogImages(),
+    },
+    twitter: { card: 'summary_large_image', images: twitterImages() },
   };
 }
 

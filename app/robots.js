@@ -1,4 +1,4 @@
-import siteConfig from '../site.config.mjs';
+import { absoluteUrl, assetUrl } from '../lib/seo.mjs';
 
 export default function robots() {
   return {
@@ -6,7 +6,7 @@ export default function robots() {
       // Single merged rule block — duplicate User-Agent sections confuse some crawlers.
       { userAgent: '*', allow: '/', disallow: ['/_next/'] },
     ],
-    sitemap: `${siteConfig.url}/sitemap.xml`,
-    host: siteConfig.url,
+    sitemap: assetUrl('/sitemap.xml'),
+    host: absoluteUrl('/').replace(/\/$/, ''),
   };
 }

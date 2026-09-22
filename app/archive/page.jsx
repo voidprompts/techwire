@@ -7,7 +7,7 @@ export const metadata = {
   title: 'Archive',
   description:
     'The complete TechWire archive: every original technology briefing we have published, from AI and hardware to security and the business of tech, newest first.',
-  alternates: { canonical: '/archive' },
+  alternates: { canonical: '/archive/' },
 };
 
 export default function ArchivePage() {
