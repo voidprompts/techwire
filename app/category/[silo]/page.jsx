@@ -14,8 +14,9 @@ export function generateStaticParams() {
   return SILOS.map((silo) => ({ silo: silo.slug }));
 }
 
-export function generateMetadata({ params }) {
-  const silo = getSilo(params.silo);
+export async function generateMetadata({ params }) {
+  const { silo: siloSlug } = await params;
+  const silo = getSilo(siloSlug);
   if (!silo) return { title: 'Category not found' };
   const postCount = getPostsBySilo(silo.slug).length;
   const indexable = postCount >= siteConfig.categoryIndexThreshold;
@@ -41,8 +42,9 @@ export function generateMetadata({ params }) {
   };
 }
 
-export default function CategoryPage({ params }) {
-  const silo = getSilo(params.silo);
+export default async function CategoryPage({ params }) {
+  const { silo: siloSlug } = await params;
+  const silo = getSilo(siloSlug);
   if (!silo) notFound();
 
   const posts = getPostsBySilo(silo.slug);

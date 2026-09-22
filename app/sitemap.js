@@ -4,6 +4,10 @@ import { absoluteUrl } from '../lib/seo.mjs';
 import { SILOS } from '../lib/silos.mjs';
 import siteConfig from '../site.config.mjs';
 
+// Next.js 16 requires metadata routes to opt into static generation explicitly
+// when using `output: 'export'`.
+export const dynamic = 'force-static';
+
 /**
  * lastmod policy
  * --------------
