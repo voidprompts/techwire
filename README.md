@@ -566,7 +566,7 @@ image_credit_name: "John Doe"
 image_credit_url: "https://unsplash.com/@johndoe?utm_source=techwire&utm_medium=referral"
 source_url: "https://originalsource.com/article"
 source_name: "Original Outlet"
-author: "TechWire Desk"
+author: "TechWire Editorial Desk"
 ---
 
 ## First H2 subheading

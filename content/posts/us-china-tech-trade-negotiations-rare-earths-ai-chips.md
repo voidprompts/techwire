@@ -1,6 +1,6 @@
 ---
-title: "US China Tech Trade Negotiations: Rare Earths, AI, Chips"
-description: "An analysis of US China tech trade negotiations as Trump and Xi meet. We break down the impact on AI hardware, rare earth supply chains, and chip exports."
+title: "US–China Tech Talks Put Chips and Critical Minerals in Focus"
+description: "A sourced briefing on how chip controls and critical-mineral policy shape US–China technology talks, supply chains, and business planning."
 date: "2026-09-22"
 keywords: ["us china tech trade negotiations", "rare earth minerals ai hardware", "semiconductor export controls", "ai safety regulation trade", "trump xi summit technology", "busan trade truce extension"]
 category: "artificial-intelligence"
@@ -9,9 +9,9 @@ image_credit_name: "Taylor Vick"
 image_credit_url: "https://unsplash.com/@tvick?utm_source=techwire&utm_medium=referral"
 source_url: "https://wired.com/story/ai-tariffs-rare-minerals-what-to-expect-from-trumps-upcoming-summit-with-xi-jinping"
 source_name: "WIRED"
-author: "TechWire Desk"
+author: "TechWire Editorial Desk"
 ---
-The high-stakes bilateral summit between the United States and China marks a defining moment for the global technology ecosystem, as expiring trade agreements force both superpowers to confront critical tensions over semiconductor supply chains, artificial intelligence governance, and essential industrial inputs. With both economies deeply intertwined yet increasingly hostile regarding advanced hardware capabilities, this meeting will determine whether commercial technology sectors face renewed tariff shocks or secure a temporary operational reprieve.
+Technology negotiations between the United States and China are an important moment for the global technology ecosystem, as expiring trade agreements force both superpowers to confront critical tensions over semiconductor supply chains, artificial intelligence governance, and essential industrial inputs. With both economies deeply intertwined yet increasingly hostile regarding advanced hardware capabilities, this meeting could influence whether commercial technology sectors face renewed tariff shocks or secure a temporary operational reprieve.
 
 At the heart of these US China tech trade negotiations lies a delicate balance of mutual leverage: Washington seeks unrestricted access to processed critical minerals necessary for modern electronics, while Beijing aims to roll back aggressive technology transfer barriers and economic sanctions targeting its domestic computing industry.
 

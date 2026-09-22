@@ -156,7 +156,7 @@ export function writePost({
   lines.push(
     `source_url: ${yamlString(sourceUrl)}`,
     `source_name: ${yamlString(sourceName || '')}`,
-    'author: "TechWire Desk"',
+    'author: "TechWire Editorial Desk"',
     '---',
     ''
   );
