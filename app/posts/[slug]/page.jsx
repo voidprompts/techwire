@@ -26,8 +26,9 @@ export function generateStaticParams() {
   return getAllSlugs().map((slug) => ({ slug }));
 }
 
-export function generateMetadata({ params }) {
-  const post = getPostBySlug(params.slug);
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
   if (!post) return { title: 'Article not found' };
 
   // Trailing slash matches next.config's trailingSlash:true, so the canonical
@@ -62,7 +63,8 @@ export function generateMetadata({ params }) {
 }
 
 export default async function PostPage({ params }) {
-  const post = getPostBySlug(params.slug);
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
   if (!post) notFound();
 
   const html = await renderMarkdown(post.content);

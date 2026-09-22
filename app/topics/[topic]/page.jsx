@@ -11,8 +11,9 @@ export function generateStaticParams() {
   return getAllTopics().map((topic) => ({ topic: topic.slug }));
 }
 
-export function generateMetadata({ params }) {
-  const topic = getAllTopics().find((t) => t.slug === params.topic);
+export async function generateMetadata({ params }) {
+  const { topic: topicSlug } = await params;
+  const topic = getAllTopics().find((t) => t.slug === topicSlug);
   if (!topic) return { title: 'Topic not found', robots: { index: false, follow: false } };
   const indexable = isTopicIndexable(topic);
   return {
@@ -38,8 +39,9 @@ export function generateMetadata({ params }) {
   };
 }
 
-export default function TopicPage({ params }) {
-  const topic = getAllTopics().find((t) => t.slug === params.topic);
+export default async function TopicPage({ params }) {
+  const { topic: topicSlug } = await params;
+  const topic = getAllTopics().find((t) => t.slug === topicSlug);
   if (!topic) notFound();
 
   const posts = getPostsByTopic(topic.slug);

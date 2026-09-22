@@ -45,17 +45,6 @@ export default function PostCard({ post, priority = false, variant = 'default' }
           <Link href={`/posts/${post.slug}`}>{post.title}</Link>
         </h2>
         <p className="card__excerpt">{post.excerpt}</p>
-        {post.topics.length > 0 && (
-          <ul className="tag-list" aria-label="Topics">
-            {post.topics.slice(0, 3).map((topic) => (
-              <li key={topic.slug}>
-                <Link href={`/topics/${topic.slug}`} className="tag">
-                  {topic.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
     </article>
   );

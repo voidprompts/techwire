@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "TechWire \u2014 an automated, zero-cost technology news curation index built on Next.js static export + Git-as-a-database.",
+  "description": "TechWire — an automated, zero-cost technology news curation index built on Next.js static export + Git-as-a-database.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "node scripts/preview-server.mjs --port 3000 --dir out",
-    "lint": "next lint",
+    "lint": "eslint .",
     "scrape": "node scripts/scrape.mjs",
     "scrape:dry": "node scripts/scrape.mjs --dry-run",
     "postbuild": "node scripts/postbuild.mjs",
@@ -18,17 +18,19 @@
   },
   "dependencies": {
     "gray-matter": "^4.0.3",
-    "next": "14.2.15",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "remark": "^15.0.1",
     "remark-gfm": "^4.0.0",
     "remark-html": "^16.0.1"
   },
   "devDependencies": {
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.5",
     "fast-xml-parser": "^4.5.0"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.9.0"
   }
 }

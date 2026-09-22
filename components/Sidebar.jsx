@@ -7,6 +7,10 @@ import { formatDate } from '../lib/posts';
  * below the 1024px breakpoint via CSS.
  */
 export default function Sidebar({ latest = [], topics = [], heading = 'Latest briefings' }) {
+  // Keep the rail useful rather than repeating every one-off article tag.
+  // Full topic navigation remains available on article pages and /topics/.
+  const featuredTopics = topics.filter((topic) => topic.count >= 2).slice(0, 8);
+
   return (
     <aside className="sidebar">
       <div className="sidebar__sticky">
@@ -24,11 +28,11 @@ export default function Sidebar({ latest = [], topics = [], heading = 'Latest br
           </section>
         )}
 
-        {topics.length > 0 && (
+        {featuredTopics.length > 0 && (
           <section className="panel">
-            <h2 className="panel__title">Topics</h2>
+            <h2 className="panel__title">Popular topics</h2>
             <ul className="tag-list">
-              {topics.map((topic) => (
+              {featuredTopics.map((topic) => (
                 <li key={topic.slug}>
                   <Link href={`/topics/${topic.slug}`} className="tag">
                     {topic.name} <span className="tag__count">{topic.count}</span>
