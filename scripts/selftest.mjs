@@ -523,6 +523,53 @@ async function main() {
       assert.ok(guard[1].includes('404'), '404 must be fatal so a dead model id cannot silently burn a run');
     });
 
+    await test('a retirement 404 hot-swaps to the replacement model Google names', () => {
+      const ai = fs.readFileSync(path.join(repoRoot, 'scripts/lib/ai.mjs'), 'utf8');
+      // The parser must pull the successor id out of the API's own 404 body.
+      assert.ok(
+        /function suggestedGeminiModel/.test(ai),
+        'expected a suggestedGeminiModel parser for retirement 404 bodies'
+      );
+      const geminiBlock = ai.slice(ai.indexOf('async function callGemini'), ai.indexOf('async function callGroq'));
+      assert.ok(
+        /suggestedGeminiModel\(detail/.test(geminiBlock),
+        'callGemini must consult the replacement model named in the 404 body'
+      );
+      assert.ok(
+        /geminiModelSwapped/.test(geminiBlock),
+        'the hot-swap must be limited to one hop so dead replacements cannot loop'
+      );
+    });
+
+    await test('the retirement-404 parser extracts the successor model id', async () => {
+      const ai = fs.readFileSync(path.join(repoRoot, 'scripts/lib/ai.mjs'), 'utf8');
+      const match = ai.match(/function suggestedGeminiModel\([^)]*\) \{[\s\S]*?\n\}/);
+      assert.ok(match, 'expected suggestedGeminiModel to be defined');
+      // eslint-disable-next-line no-new-func
+      const fn = new Function(`${match[0]}; return suggestedGeminiModel;`)();
+      const retirementBody =
+        'This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.6-flash for the latest features.';
+      assert.equal(
+        fn(retirementBody, 'gemini-2.5-flash'),
+        'gemini-3.6-flash',
+        'parser must return the successor, not the model that just died'
+      );
+      assert.equal(fn('no model mentioned here', 'gemini-2.5-flash'), null, 'no id means no swap');
+    });
+
+    await test('a fatal provider error fails over to the other configured provider', () => {
+      const ai = fs.readFileSync(path.join(repoRoot, 'scripts/lib/ai.mjs'), 'utf8');
+      assert.ok(
+        /function fallbackProvider/.test(ai),
+        'expected a fallbackProvider helper'
+      );
+      const generateBlock = ai.slice(ai.indexOf('export async function generateArticle'));
+      assert.ok(
+        /error\?\.fatal && fallback/.test(generateBlock),
+        'generateArticle must fail over to the other provider on a fatal error'
+      );
+    });
+
     await test('infrastructure failures do not blacklist the source URL', () => {
       const scrape = fs.readFileSync(path.join(repoRoot, 'scripts/scrape.mjs'), 'utf8');
       const catchBlock = scrape.slice(scrape.indexOf('} catch (error) {'), scrape.indexOf('saveState('));

@@ -166,7 +166,7 @@ Copy `.env.example` → `.env.local`. Nothing here is required just to run the *
 | Variable | Default | Description |
 |---|---|---|
 | `AI_PROVIDER` | auto | `gemini` or `groq`; auto-detected from whichever key exists |
-| `GEMINI_MODEL` | `gemini-1.5-flash-latest` | Model override |
+| `GEMINI_MODEL` | `gemini-3.6-flash` | Model override |
 | `GROQ_MODEL` | `llama-3.3-70b-versatile` | Model override |
 | `MAX_POSTS_PER_RUN` | `4` | Publish cap per run |
 | `MAX_AGE_HOURS` | `48` | Ignore stories older than this |
@@ -383,7 +383,7 @@ runs `next build` directly instead of invoking npm lifecycle hooks.
 | Canonical URLs point at `techwire.pages.dev` | `NEXT_PUBLIC_SITE_URL` still holds the default. Update and rebuild. |
 | New articles not appearing | Check the **Actions** tab — the scraper commits, Cloudflare only reacts to the push. |
 | Scrape run is green but no article was published | Open the run summary: it now prints candidates attempted / published / failed. A run that attempts candidates and publishes none exits non-zero, so a green tick with zero posts should no longer be possible. |
-| Scraper log shows `Gemini HTTP 404 … model is not served` | The configured model id no longer exists. Google retired the Gemini 1.5 family in late 2025. Set the `GEMINI_MODEL` variable to a current model, e.g. `gemini-2.5-flash`. |
+| Scraper log shows `Gemini HTTP 404 … model is not served` | The configured model id no longer exists (Google retires Gemini families on a cadence — 1.5 in late 2025, 2.5-flash in 2026). The scraper now follows the replacement model named in the 404 body automatically, and fails over to Groq if a `GROQ_API_KEY` is set. If it still fails, set the `GEMINI_MODEL` variable to a current model from https://ai.google.dev/gemini-api/docs/models. |
 | A commit lands but no Cloudflare deployment starts | The commit message must not contain `[skip ci]` / `[CI Skip]` / `[CF-Pages-Skip]`. Cloudflare Pages honours these markers and skips the build **without showing a check run**, so it looks like nothing happened. The autopilot no longer adds one. |
 | Scraper log shows `No AI key reached this job` | The key is an *environment* secret, not a *repository* secret. Environment-scoped secrets are only exposed to jobs that declare that `environment:`. Re-add it under **Settings → Secrets and variables → Actions → Repository secrets**. |
 | Every commit has a red X from "Deploy to GitHub Pages" | That workflow is manual-only now, since this project deploys via Cloudflare. It failed on every push because GitHub Pages was never enabled. |
