@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-08T23:49:54.875Z",
+  "updatedAt": "2026-11-09T06:42:17.963Z",
   "urls": [
     "https://theverge.com/tech/1004131/3d-movies-are-finally-worth-watching-xreal-meta-glasses-vision-pro",
     "https://j11g.com/the-mythical-man-month-in-the-age-of-ai",
@@ -37,6 +37,7 @@
     "https://philipotoole.com/twelve-years-of-distributed-sqlite",
     "https://shkspr.mobi/blog/2026/10/i-paid-people-to-try-and-follow-my-readme",
     "https://dawo.community/en",
+    "https://thestateofai.com/news/goldman-sachs-claude-code-traders-bankers",
     "https://tangled.org/yanndegat.tngl.sh/drawgent",
     "https://sec.gov/Archives/edgar/data/1579878/000162828025037014/figma424b4.htm",
     "https://engadget.com/2300292/what-fitbit-heart-rate-variability-tells-you",
@@ -48,6 +49,7 @@
     "https://engadget.com/2309631/googles-eyewear-partners-cant-keep-a-lid-on-its-smart-glasses-plans",
     "https://deepmind.google/blog/genie-4-a-new-generation-of-world-simulation",
     "https://techcrunch.com/2026/11/02/google-takes-dreambeans-to-india-in-bid-to-bring-ai-generated-personal-stories-to-the-masses",
+    "https://engadget.com/2309302/switch-to-google-pixel-from-samsung-galaxy",
     "https://theverge.com/tech/1017600/google-personal-intelligence-privacy-policy-ads-update",
     "https://arstechnica.com/gaming/2026/11/googles-legend-of-zelda-easter-egg-transports-you-back-to-1998",
     "https://cisa.gov/news-events/cybersecurity-advisories/aa26-222a",
@@ -84,6 +86,7 @@
     "https://bbc.com/news/articles/c32l8y8kygdvo",
     "https://theverge.com/science/1009379/nasa-800gb-artemis-ii-data",
     "https://arstechnica.com/gaming/2026/11/the-tech-memory-shortage-comes-for-nintendos-cartridge-supply-chain",
+    "https://theverge.com/ai-artificial-intelligence/1029595/full-text-jensen-huang-affair-memo-nvidia",
     "https://sfstandard.com/2026/10/13/openai-engineer-arrested-alleged-bugging-executive-conference-room",
     "https://theverge.com/ai-artificial-intelligence/1008604/openai-defends-decision-fire-safety-researchers",
     "https://engadget.com/2297941/openai-new-discoveries-mathematics-computer-science-physics",
@@ -175,9 +178,8 @@
     "https://devvm.dev/",
     "https://uploadyourram.org/",
     "https://apiiro.com/blog/coding-agents-leaking-secrets-github-dont-ask-again",
-    "https://engadget.com/2309302/switch-to-google-pixel-from-samsung-galaxy",
-    "https://theverge.com/ai-artificial-intelligence/1029595/full-text-jensen-huang-affair-memo-nvidia",
-    "https://thestateofai.com/news/goldman-sachs-claude-code-traders-bankers",
-    "https://duxlabs.dev/"
+    "https://duxlabs.dev/",
+    "https://aphyr.com/posts/427-rip-harvest",
+    "https://chimera-vocal-synth.vercel.app/"
   ]
 }
