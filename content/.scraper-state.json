@@ -1,6 +1,7 @@
 {
-  "updatedAt": "2026-11-11T12:48:56.860Z",
+  "updatedAt": "2026-11-11T22:06:27.906Z",
   "urls": [
+    "https://engadget.com/2312913/2027-chevrolet-bolt-review",
     "https://theverge.com/tech/1004131/3d-movies-are-finally-worth-watching-xreal-meta-glasses-vision-pro",
     "https://j11g.com/the-mythical-man-month-in-the-age-of-ai",
     "https://theverge.com/ai-artificial-intelligence/1013195/ai-agents-blocked-web",
@@ -87,6 +88,7 @@
     "https://bbc.com/news/articles/c32l8y8kygdvo",
     "https://theverge.com/science/1009379/nasa-800gb-artemis-ii-data",
     "https://arstechnica.com/gaming/2026/11/the-tech-memory-shortage-comes-for-nintendos-cartridge-supply-chain",
+    "https://techcrunch.com/2026/11/10/nvidias-crisis-has-corporate-governance-experts-reaching-for-the-popcorn",
     "https://theverge.com/ai-artificial-intelligence/1029595/full-text-jensen-huang-affair-memo-nvidia",
     "https://sfstandard.com/2026/10/13/openai-engineer-arrested-alleged-bugging-executive-conference-room",
     "https://theverge.com/ai-artificial-intelligence/1008604/openai-defends-decision-fire-safety-researchers",
@@ -99,7 +101,9 @@
     "https://jetstream.security/insights/brazilian-court-sanctions-prompt-injection-filing",
     "https://engadget.com/2265491/you-can-use-your-old-laptop-to-make-a-smart-home-hub",
     "https://engadget.com/2298907/rockstar-workers-in-uk-hold-union-vote-as-gta-6-release",
+    "https://gatezh.com/posts/macos-secure-enclave-ssh-keys",
     "https://piefed.world/post/1503394",
+    "https://wired.com/gallery/best-indoor-gardening-systems",
     "https://theverge.com/gadgets/1017667/anker-soundcore-space-2-noise-canceling-headphones-deal-sale",
     "https://stripe.com/newsroom/news/stripe-2025-update",
     "https://engadget.com/2292610/subaru-is-dropping-gas-cars-for-evs-in-europe-by-the-end-of-2027",
@@ -184,9 +188,8 @@
     "https://duxlabs.dev/",
     "https://chimera-vocal-synth.vercel.app/",
     "https://news.ycombinator.com/front?day=2024-11-08",
-    "https://wired.com/gallery/best-indoor-gardening-systems",
-    "https://engadget.com/2312913/2027-chevrolet-bolt-review",
-    "https://gatezh.com/posts/macos-secure-enclave-ssh-keys",
-    "https://techcrunch.com/2026/11/10/nvidias-crisis-has-corporate-governance-experts-reaching-for-the-popcorn"
+    "https://michael.bacarella.com/2026/11/10/false-smoke-alarm-jane-street-datacenter",
+    "https://blog.kate.land/posts/using-voltage-glitching-to-unlock-the-a100",
+    "https://av.github.io/safe-sand"
   ]
 }
